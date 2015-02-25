@@ -138,8 +138,10 @@ AndroidDriver: class extends Driver {
 				fw write("$(LOCAL_PATH)/"). write(sourceFolder identifier). write(" ")
 			}
 
-			fw write("\n"). write("LOCAL_CFLAGS += -DNDEBUG"). write("\n")
-			fw write("\n"). write("LOCAL_CFLAGS += -O2"). write("\n")
+			for(i in 0..this params defines size) {
+				if(this params defines[i] != "__OOC_DEBUG__")
+					fw write("\n"). write("LOCAL_CFLAGS += -D" + this params defines[i]). write("\n")
+			}
 
 			for(sourceFolder in sourceFolders) {
 				uses := collectUses(sourceFolder)
