@@ -62,8 +62,10 @@ Module: class extends Node {
             case =>
                 simpleName = this fullName substring(idx + 1)
         }
-
-        underName = sanitize(this fullName)
+        if (this fullName indexOf("lang/") == 0)
+            underName = sanitize(this fullName)
+        else
+            underName = sanitize(this simpleName)
 
         dead = false
     }
