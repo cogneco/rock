@@ -15,6 +15,7 @@ VariableAccess: class extends Expression {
 
     _warned := false
     _staticFunc : FunctionDecl = null
+    _replacedByProperty? := false
 
     expr: Expression {
         get
@@ -170,7 +171,7 @@ VariableAccess: class extends Expression {
             return false
         }
 
-        true
+        !_replacedByProperty?
     }
 
     resolve: func (trail: Trail, res: Resolver) -> Response {
@@ -255,6 +256,8 @@ VariableAccess: class extends Expression {
                 }
 
                 if(shouldReplace) {
+                    _replacedByProperty? = true
+
                     property := ref as PropertyDecl
                     fCall := FunctionCall new(expr, property getGetterName(), token)
                     if (!trail peek() replace(this, fCall)) {

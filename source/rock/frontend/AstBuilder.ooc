@@ -1304,11 +1304,18 @@ AstBuilder: class {
     }
 
     onSafeNavigationSection: unmangled(nq_onSafeNavigationSection) func {
-        peek(SafeNavigation) sections add(ArrayList<String> new())
+        peek(SafeNavigation) sections add(null as Expression)
     }
 
     onSafeNavigationIdent: unmangled(nq_onSafeNavigationIdent) func (ident: CString) {
-        peek(SafeNavigation) sections last() add(ident toString())
+        safenav := peek(SafeNavigation)
+        safenav sections[safenav sections lastIndex()] = VariableAccess new(safenav sections last(), ident toString(), token())
+    }
+
+    onSafeNavigationMethod: unmangled(nq_onSafeNavigationMethod) func (fCall: FunctionCall) {
+        safenav := peek(SafeNavigation)
+        fCall setExpr(safenav sections last())
+        safenav sections[safenav sections lastIndex()] = fCall
     }
 
     onSafeNavigationEnd: unmangled(nq_onSafeNavigationEnd) func -> SafeNavigation {
