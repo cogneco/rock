@@ -1253,6 +1253,29 @@ TypeDecl: abstract class extends Declaration {
                     varAcc := VariableAccess new("this", access token)
                     varAcc reverseExpr = access
                     access expr = varAcc
+                    if (res params explicitThis) {
+                        mustBeExplicit := true
+
+                        // Generic variables do not require explicit this
+                        if (vDecl getType()) {
+                            if (vDecl getType() toString() == "Class") {
+                                mustBeExplicit = false
+                            }
+                        }
+
+                        // Access to a variable from within its own declaration does not have to be explicit
+                        depth := trail getSize() - 1
+                        while (depth >= 0) {
+                            if (trail get(depth) == vDecl) {
+                                mustBeExplicit = false
+                            }
+                            depth -= 1
+                        }
+
+                        if (mustBeExplicit) {
+                            access token printMessage("Implicit this detected for variable access of " + vDecl name + "!")
+                        }
+                    }
                 }
                 return 0
             }
