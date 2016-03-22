@@ -1383,8 +1383,14 @@ TypeDecl: abstract class extends Declaration {
         if (fDecl) {
             if (call debugCondition()) "    \\o/ Found fDecl for %s, it's %s" format(call name, fDecl toString()) println()
             if (call suggest(fDecl, res, trail)) {
-                if (fDecl hasThis() && !call getExpr()) {
-                    call setExpr(VariableAccess new("this", call token))
+                if (!call getExpr()) {
+                    if (fDecl hasThis()) {
+                        call setExpr(VariableAccess new("this", call token))
+                    }
+                    if (res params explicitThis && fDecl name != "init" && fDecl name != ClassDecl DEFAULTS_FUNC_NAME) {
+                        name := fDecl hasThis() ? "this" : "This"
+                        call token printMessage("Implicit " + name + " detected for call to " + fDecl name + "!")
+                    }
                 }
                 return 0
             }
@@ -1414,6 +1420,9 @@ TypeDecl: abstract class extends Declaration {
                             // if the variable is static, use class scope not instance
                             name := vDecl isStatic() ? "This" : "this"
                             call setExpr(VariableAccess new(name, call token))
+                            if (res params explicitThis) {
+                                call token printMessage("Implicit " + name + " detected for call to " + vDecl name + "!")
+                            }
                         }
                     }
                 }
