@@ -1,4 +1,5 @@
 import structs/[ArrayList, HashMap, MultiMap]
+import ../frontend/BuildParams
 import Node, Type, TypeDecl, FunctionDecl, FunctionCall, Visitor, VariableAccess, PropertyDecl, ClassDecl, CoverDecl
 import tinker/[Trail, Resolver, Response, Errors]
 
@@ -155,9 +156,16 @@ Addon: class extends Node {
             }
 
             if (call suggest(fDecl, res, trail)) {
-                if (fDecl hasThis() && !call getExpr()) {
-                    // add `this` if needed.
-                    call setExpr(VariableAccess new("this", call token))
+                if (!call getExpr()) {
+                    if (fDecl hasThis()) {
+                        // add `this` if needed.
+                        call setExpr(VariableAccess new("this", call token))
+                    }
+                    // Not yet tested
+                    if (res params explicitThis) {
+                        name := fDecl hasThis() ? "this" : "This"
+                        call token printMessage("Implicit " + name + " detected for call to " + fDecl name + "!")
+                    }
                 }
             }
         )
