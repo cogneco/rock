@@ -1,5 +1,5 @@
 
-import io/[File, FileReader], text/[EscapeSequence]
+import io/[File, FileReader], text/[EscapeSequence], Precompiler
 
 import structs/[ArrayList, List, Stack, HashMap]
 
@@ -75,7 +75,7 @@ AstBuilder: class {
         module addUse(Use new("system", params, module token))
 
         file := FileReader new(modulePath, "rb")
-        content := file readAll()
+        content := precompile(file readAll())
         file close()
         result := nq_memparse(this, content toCString(), content size)
         if(result == -1) {
