@@ -1,5 +1,5 @@
 
-import io/File, text/[EscapeSequence]
+import io/[File, FileReader], text/[EscapeSequence]
 
 import structs/[ArrayList, List, Stack, HashMap]
 
@@ -18,6 +18,7 @@ import ../middle/[FunctionDecl, VariableDecl, TypeDecl, ClassDecl, CoverDecl,
     TemplateDef, SafeNavigation]
 
 nq_parse: extern proto func (AstBuilder, CString) -> Int
+nq_memparse: extern proto func (AstBuilder, CString, Int) -> Int
 
 // reserved C99 keywords
 reservedWords := ["auto", "int", "long", "char", "register", "short", "do",
@@ -73,7 +74,10 @@ AstBuilder: class {
 
         module addUse(Use new("system", params, module token))
 
-        result := nq_parse(this, modulePath)
+        file := FileReader new(modulePath, "rb")
+        content := file readAll()
+        file close()
+        result := nq_memparse(this, content toCString(), content size)
         if(result == -1) {
             Exception new(This, "File " +modulePath + " not found") throw()
         }
