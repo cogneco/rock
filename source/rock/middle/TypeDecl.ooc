@@ -993,8 +993,8 @@ TypeDecl: abstract class extends Declaration {
 
             next := current getSuperRef()
             if(next == null) {
-            res wholeAgain(this, "need superRef to check override")
-            return false
+                res wholeAgain(this, "need superRef to check override")
+                return false
             }
 
             list add(current)
@@ -1038,15 +1038,16 @@ TypeDecl: abstract class extends Declaration {
                                          }
 
                                          if(checkNumType(type1, type2) && type1 getName() != type2 getName()) { score = -100000 }
-                                         if(fdecl getArguments() size == other getArguments() size && (type1 isGeneric() || type2 isGeneric() || score > 0)) {
+                                         thisArgs := fdecl getArguments()
+                                         otherArgs := other getArguments()
+                                         if(thisArgs size == otherArgs size && (type1 isGeneric() || type2 isGeneric() || score > 0)) {
                                                 argumentTypeIsOk := true
-                                                thisArgs := fdecl getArguments()
-                                                otherArgs := other getArguments()
-                                                for(i in 0 .. fdecl getArguments() size) {
+                                                for(i in 0 .. thisArgs size) {
                                                      type1 := unwrapType(thisArgs[i] getType())
                                                      type2 := unwrapType(otherArgs[i] getType())
                                                      if (type1 isGeneric() && type2 isGeneric() && type1 pointerLevel() != type2 pointerLevel()) {
                                                          argumentTypeIsOk = false
+                                                         break
                                                      }
                                                      if(!type1 || !type2) {
                                                        res wholeAgain(this, "argument type needs to be resolved")
