@@ -989,16 +989,16 @@ TypeDecl: abstract class extends Declaration {
         }
         current := this
         while(current != null) {
-        if(current getSuperType() == null) break
+            if(current getSuperType() == null) break
 
-        next := current getSuperRef()
-        if(next == null) {
-          res wholeAgain(this, "need superRef to check override")
-          return false
-        }
+            next := current getSuperRef()
+            if(next == null) {
+            res wholeAgain(this, "need superRef to check override")
+            return false
+            }
 
-        list add(current)
-        current = next
+            list add(current)
+            current = next
         }
         notVirtual := false
         notEqualNameAndSuffix := true
@@ -1038,15 +1038,16 @@ TypeDecl: abstract class extends Declaration {
                                          }
 
                                          if(checkNumType(type1, type2) && type1 getName() != type2 getName()) { score = -100000 }
-                                         if(fdecl getArguments() size ==
-                                             other getArguments() size &&
-                                             (type1 isGeneric() || type2 isGeneric() || score > 0)) {
+                                         if(fdecl getArguments() size == other getArguments() size && (type1 isGeneric() || type2 isGeneric() || score > 0)) {
                                                 argumentTypeIsOk := true
                                                 thisArgs := fdecl getArguments()
                                                 otherArgs := other getArguments()
                                                 for(i in 0 .. fdecl getArguments() size) {
                                                      type1 := unwrapType(thisArgs[i] getType())
                                                      type2 := unwrapType(otherArgs[i] getType())
+                                                     if (type1 isGeneric() && type2 isGeneric() && type1 pointerLevel() != type2 pointerLevel()) {
+                                                         argumentTypeIsOk = false
+                                                     }
                                                      if(!type1 || !type2) {
                                                        res wholeAgain(this, "argument type needs to be resolved")
                                                        return false
