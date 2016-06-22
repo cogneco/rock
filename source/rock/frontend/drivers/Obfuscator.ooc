@@ -27,9 +27,6 @@ Obfuscator: class extends Driver {
             processModule(currentModule)
         processModule(module)
         CommandLine success(params)
-        "Mapping file:" printfln()
-        for (target in targets)
-            "%s" printfln(target toString())
         "Compiling..." printfln()
         params driver compile(module)
     }
@@ -59,7 +56,24 @@ Obfuscator: class extends Driver {
         if (targetType != null) {
             if (type instanceOf?(EnumDecl))
                 handleEnum(type as EnumDecl, targetType newName)
+            handleMemberVariables(type, targetType oldName + ".")
+            handleMemberFunctions(type, targetType oldName substring(0, targetType oldName length() - 5) + ".")
             type name = targetType newName
+        } else {
+            superType := type getBase()
+            superTypeTarget: ObfuscationTarget
+            if (superType != null) {
+                for (target in targets) {
+                    if (target newName == superType name) {
+                        superTypeTarget = targets get(target oldName)
+                        if (superTypeTarget != null) {
+                            handleMemberVariables(type, target oldName + ".")
+                            handleMemberFunctions(type, target oldName substring(0, target oldName length() - 5) + ".")
+                        }
+                        break
+                    }
+                }
+            }
         }
     }
     handleEnum: func (enumeration: EnumDecl, newName: String) {
@@ -85,17 +99,42 @@ Obfuscator: class extends Driver {
             }
         }
     }
-    handleMemberFunctions: func (owner: TypeDecl, searchPrefix: String) {
+    handleMemberFunctions: func (owner: TypeDecl, searchKeyPrefix: String) {
         for (function in owner functions) {
-            functionSearchKey := searchPrefix + function name
+            functionSearchKey := searchKeyPrefix + function name
             targetFunction := targets get(functionSearchKey)
             if (targetFunction != null) {
+                if (function isAbstract || function isVirtual || function isOverride) {
+                    CommandLine warn("Obfuscator: functions marked as abstract, virtual or override are not yet supported.")
+                    "                    -> skipping: #{function toString()}" printfln()
+                    continue
+                }
                 function name = targetFunction newName
             }
+            handleFunctionArguments(function, searchKeyPrefix)
+        }
+    }
+    handleFunctionArguments: func(function: FunctionDecl, searchPrefix: String) {
+        for (variable in function args) {
+            variableSearchKey := searchPrefix + variable name
+            targetVariable := targets get(variableSearchKey)
+            if (targetVariable != null)
+                variable name = targetVariable newName
         }
     }
     handleProperty: func (property: PropertyDecl, searchKey: String) {
-        // TODO
+        targetProperty := targets get(searchKey)
+        if (targetProperty != null) {
+            obfuscateProperty := func (accept: Bool, target: PropertyDecl, fn: FunctionDecl) {
+                if (accept) {
+                    // For now, use only partial prefix and strip the suffix
+                    target name = targetProperty newName
+                    fn name = fn name substring(2, 5) + targetProperty newName
+                }
+            }
+            obfuscateProperty(property getter != null, property, property getter)
+            obfuscateProperty(property setter != null, property, property setter)
+        }
     }
     parseMappingFile: func (mappingFile: String) -> HashMap<String, ObfuscationTarget> {
         result := HashMap<String, ObfuscationTarget> new(50)
