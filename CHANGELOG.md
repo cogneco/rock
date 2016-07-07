@@ -1,3 +1,9 @@
+## 1.0.21 (2016-07-??)
+Summary:
+  - Class load function are now only evaluated once
+  - rock now handles rvalue references when dealing with cover properties
+  - rock now allows you to extend generic classes by generic type, as opposed to by concrete types.
+
 ## 1.0.20 (2016-04-21)
 
 Summary:
