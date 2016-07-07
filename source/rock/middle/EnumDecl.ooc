@@ -14,6 +14,8 @@ EnumDecl: class extends TypeDecl {
     isInitial := true /* true if we're processing the first item in the enum */
     valuesCoverDecl: CoverDecl
     valuesGlobal: VariableDecl
+    valuesCoverDeclSuffix := "__values_t"
+    valuesGlobalSuffix := "__values"
 
     init: func ~enumDecl(.name, .token) {
         super(name, token)
@@ -42,7 +44,7 @@ EnumDecl: class extends TypeDecl {
     }
 
     createCovers: func (trail: Trail) {
-        valuesCoverDecl = CoverDecl new(name + "__values_t", token)
+        valuesCoverDecl = CoverDecl new(name + valuesCoverDeclSuffix, token)
 
         for (v in getMeta() variables) {
             vDecl := VariableDecl new(BaseType new("Int", token), v name, v token)
@@ -57,7 +59,7 @@ EnumDecl: class extends TypeDecl {
         }
 
         slit := StructLiteral new(valuesCoverDecl getInstanceType(), elements, token)
-        valuesGlobal = VariableDecl new(null, name + "__values", slit, token)
+        valuesGlobal = VariableDecl new(null, name + valuesGlobalSuffix, slit, token)
         valuesGlobal isGlobal = true
 
         if (verzion) {
