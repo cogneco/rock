@@ -22,19 +22,20 @@ Obfuscator: class extends Driver {
         targets = parseMappingFile(mappingFile)
     }
     compile: func (module: Module) -> Int {
-        "Obfuscating..." printfln()
+        CommandLine info("Obfuscating...")
         for (currentModule in module collectDeps())
             processModule(currentModule)
         processModule(module)
         CommandLine success(params)
-        "Compiling..." printfln()
+        CommandLine info("Done. Compiling...")
         params driver compile(module)
     }
     processModule: func (module: Module) {
         target := targets get(module simpleName)
         if (target != null) {
             module simpleName = target newName
-            module underName = module underName substring(0, module underName indexOf(target oldName)) append(target newName)
+            module underName = "__source" + "_" + target newName + "_" + target newName; // temporary!
+            //module underName = module underName substring(0, module underName indexOf(target oldName)) append(target newName)
             module isObfuscated = true
             for (statement in module body) {
                 if (statement instanceOf?(VariableDecl) && !statement as VariableDecl getType() instanceOf?(AnonymousStructType)) {
