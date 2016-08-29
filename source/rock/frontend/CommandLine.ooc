@@ -755,6 +755,12 @@ CommandLine: class {
         first = false
     }
 
+    info: static func (message: String) {
+        Terminal setFgColor(Color blue)
+        "[INFO ] %s" printfln(message)
+        Terminal reset()
+    }
+
     warn: static func (message: String) {
         Terminal setFgColor(Color yellow)
         "[WARN ] %s" printfln(message)
