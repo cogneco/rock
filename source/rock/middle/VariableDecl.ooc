@@ -3,7 +3,7 @@ import Type, Declaration, Expression, Visitor, TypeDecl, VariableAccess,
        Node, ClassDecl, FunctionCall, Argument, BinaryOp, Cast, Module,
        Block, Scope, FunctionDecl, Argument, BaseType, FuncType, Statement,
        NullLiteral, Tuple, TypeList, AddressOf, PropertyDecl, CommaSequence,
-       IntLiteral, Addon
+       IntLiteral
 import tinker/[Response, Resolver, Trail, Errors]
 import ../frontend/[BuildParams, Token]
 
@@ -233,7 +233,7 @@ VariableDecl: class extends Declaration {
 
         parent := trail peek()
         {
-            if(!parent isScope() && !parent instanceOf?(TypeDecl) && !parent instanceOf?(Addon) && !parent instanceOf?(FuncType)) {
+            if(!parent isScope() && !parent instanceOf?(TypeDecl) && !parent instanceOf?(FuncType)) {
                 if(debugCondition()) "Parent isn't scope nor typedecl, unwrapping." println()
                 varAcc := VariableAccess new(this, token)
 
@@ -258,20 +258,17 @@ VariableDecl: class extends Declaration {
                     // Didn't find a scope, but maybe we can find something else?
                     mDeclIdx := trail find(VariableDecl)
                     cDeclIdx := trail find(ClassDecl)
-                    addonIdx := trail find(Addon)
-
                     if (cDeclIdx != -1 && mDeclIdx != -1 && (mDeclIdx - cDeclIdx) == 1) {
                         cDecl := trail get(cDeclIdx, ClassDecl)
                         mDecl := trail get(mDeclIdx, VariableDecl)
 
-                        fDecl := match (mDecl isStatic()) {
-                            case true => cDecl getLoadFunc()
-                            case      => cDecl getDefaultsFunc()
+                        fDecl: FunctionDecl
+                        if(mDecl isStatic()) {
+                            fDecl = cDecl getLoadFunc()
+                        } else {
+                            fDecl = cDecl getDefaultsFunc()
                         }
-
                         fDecl getBody() add(this)
-                        result = true
-                    } else if (addonIdx != -1 && mDeclIdx != -1 && (mDeclIdx - addonIdx) == 1) {
                         result = true
                     }
                 }
