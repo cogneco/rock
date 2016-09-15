@@ -329,6 +329,7 @@ TypeDecl: abstract class extends Declaration {
 
     getVariables: func -> HashMap<String, VariableDecl> { variables }
     getFunctions: func -> HashMap<String, FunctionDecl> { functions }
+    getOperators: func -> ArrayList<OperatorDecl> { operators }
 
     underName: func -> String {
         if (module != null && !module underName empty?() && !isExtern()) {
