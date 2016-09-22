@@ -448,6 +448,10 @@ FunctionCall: class extends Expression {
 
             if(name == "super") {
                 fDecl := trail get(trail find(FunctionDecl), FunctionDecl)
+                // Do not allow calling super() in a function that is not marked as override
+                if (fDecl getName() != "init" && !fDecl isOverride) {
+                    res throwError(UseOfSuperInShadowedFunction new(token, fDecl))
+                }
                 superTypeDecl := fDecl owner getSuperRef()
                 finalScore := 0
                 ref = superTypeDecl getMeta() getFunction(fDecl getName(), null, this, finalScore&)
@@ -1787,5 +1791,11 @@ UseOfVoidExpression: class extends Error {
 ArgumentMismatch: class extends Warning {
     init: func ~withToken (.token, call: FunctionCall, cand: FunctionDecl) {
         super(token, "Different number of arguments between the super call in %s and function %s" format(call toString(), cand toString()))
+    }
+}
+
+UseOfSuperInShadowedFunction: class extends Error {
+    init: func ~withToken (.token, fDecl: FunctionDecl) {
+        super(token, "Calling super() in a shadowed function is prohibited. Did you forget to mark this function as override? '%s'" format(fDecl toString()))
     }
 }
