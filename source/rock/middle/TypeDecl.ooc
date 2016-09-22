@@ -105,9 +105,9 @@ TypeDecl: abstract class extends Declaration {
         type = BaseType new("Class", token)
         instanceType = BaseType new(name, token)
         instanceType as BaseType ref = this
-        thisDecl    = VariableDecl new(instanceType, "this", token)
+        thisDecl    = VariableDecl new(instanceType, "_this", token)
         thisDecl owner = this
-        thisRefDecl = VariableDecl new(ReferenceType new(instanceType, token), "this", token)
+        thisRefDecl = VariableDecl new(ReferenceType new(instanceType, token), "_this", token)
         thisRefDecl owner = this
 
         if (!isMeta) {

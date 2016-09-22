@@ -202,7 +202,7 @@ ClassDeclWriter: abstract class extends Skeleton {
                     if(vDecl getExpr() == null) continue
                     current nl(). app(cDecl getNonMeta() underName()). app("_class()->"). app(vDecl getName()). app(" = "). app(vDecl getExpr()). app(';')
                 }
-            
+
                 current closeBlock()
             }
 
@@ -229,9 +229,9 @@ ClassDeclWriter: abstract class extends Skeleton {
             current app("return ("). app(fDecl returnType). app(") ")
           }
           if(cDecl getNonMeta() instanceOf?(InterfaceDecl)) {
-            current app("this.impl->")
+            current app("_this.impl->")
             } else {
-              current app("(("). app(baseClass underName()). app(" *)"). app("((types__Object *)this)->class)->")
+              current app("(("). app(baseClass underName()). app(" *)"). app("((types__Object *)_this)->class)->")
             }
           FunctionDeclWriter writeSuffixedName(this, fDecl)
           FunctionDeclWriter writeFuncArgs(this, fDecl, ArgsWriteModes NAMES_ONLY, baseClass)
@@ -313,7 +313,7 @@ ClassDeclWriter: abstract class extends Skeleton {
                 if(!shouldAssign) continue
 
                 realOwner := cDecl getVariable(refTypeArg getName()) getOwner()
-                current nl(). app("(("). app(realOwner getInstanceType()). app(") this)->"). app(refTypeArg getName()). app(" = (void*) "). app(typeArg). app(';')
+                current nl(). app("(("). app(realOwner getInstanceType()). app(") _this)->"). app(refTypeArg getName()). app(" = (void*) "). app(typeArg). app(';')
 
                 j += 1
             }
@@ -327,13 +327,13 @@ ClassDeclWriter: abstract class extends Skeleton {
             if(superDefaults) {
                 current nl()
                 FunctionDeclWriter writeFullName(this, superDefaults)
-                current app("_impl(("). app(superDefaults owner getInstanceType()). app(") this);")
+                current app("_impl(("). app(superDefaults owner getInstanceType()). app(") _this);")
             }
         }
 
         for(vDecl in meat variables) {
             if(vDecl getExpr() == null) continue
-            current nl(). app("this->"). app(vDecl getName()). app(" = "). app(vDecl getExpr()). app(';')
+            current nl(). app("_this->"). app(vDecl getName()). app(" = "). app(vDecl getExpr()). app(';')
         }
     }
 
