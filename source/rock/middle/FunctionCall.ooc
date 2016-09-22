@@ -449,7 +449,7 @@ FunctionCall: class extends Expression {
             if(name == "super") {
                 fDecl := trail get(trail find(FunctionDecl), FunctionDecl)
                 // Do not allow calling super() in a function that is not marked as override
-                if (fDecl getName() != "init" && !fDecl isOverride) {
+                if (fDecl getName() != "init" && !fDecl isOverride && !res params allowSuperWhenShadowing) {
                     res throwError(UseOfSuperInShadowedFunction new(token, fDecl))
                 }
                 superTypeDecl := fDecl owner getSuperRef()

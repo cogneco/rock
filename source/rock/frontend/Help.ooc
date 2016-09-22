@@ -197,6 +197,10 @@ ADVANCED OPTIONS
 --obfuscate=MAP_FILE
     Translates types specified in the specified map file (EXPERIMENTAL).
     Example: not yet.
+
+--allow-super-when-shadowing
+    Allows you to call super() in a shadowed function. This is prohibited by default.
+
 "
         )
     }

@@ -390,6 +390,10 @@ CommandLine: class {
                     params obfuscate = true
                     params obfuscator = Obfuscator new(params, option substring("obfuscate=" length()))
                     params lineDirectives = false
+                } else if (option == "allow-super-when-shadowing") {
+
+                    params allowSuperWhenShadowing = true
+
                 } else if (option startsWith?("blowup=")) {
 
                     if(!longOption) warnUseLong("blowup")
