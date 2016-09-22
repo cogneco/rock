@@ -2,7 +2,7 @@ import structs/[ArrayList, HashMap]
 import ../io/TabbedWriter
 import TypeDecl, Declaration, Visitor, Node, VariableAccess, Type,
        VariableDecl, IntLiteral, FloatLiteral, Expression, FunctionDecl,
-       CoverDecl, Module, StructLiteral, BaseType, Version
+       CoverDecl, Module, StructLiteral, BaseType, Version, Return
 import tinker/[Trail, Resolver, Response, Errors]
 import ../frontend/Token
 
@@ -37,10 +37,24 @@ EnumDecl: class extends TypeDecl {
 
         if (valuesCoverDecl == null) {
             createCovers(trail)
+            if (fn := getMeta() lookupFunction("count", null)) {
+                res throwError(UseOfReservedNameInEnum new(fn token, "count"))
+            }
+            addFunction(generateCountFunction(valuesCoverDecl variables size))
             res wholeAgain(this, "need to resolve coverdecls for enum")
         }
 
         Response OK
+    }
+
+    generateCountFunction: func (count: Int) -> FunctionDecl {
+        result := FunctionDecl new("count", nullToken)
+        result setSuffix("generated")
+        result setStatic(true)
+        result isGenerated = true
+        result setReturnType(BaseType new("Int", nullToken))
+        result getBody() add(Return new(IntLiteral new(count, nullToken), nullToken))
+        result
     }
 
     createCovers: func (trail: Trail) {
@@ -180,3 +194,8 @@ ImpossibleIncrement: class extends Error {
     init: super func ~tokenMessage
 }
 
+UseOfReservedNameInEnum: class extends Error {
+    init: func (.token, name: String) {
+        super(token, "'%s' is a reserved name for an auto-generated function" format(name))
+    }
+}
