@@ -9,6 +9,12 @@ AccessWriter: abstract class extends Skeleton {
 
     writeVariableDeclAccess: static func (this: Skeleton, vDecl: VariableDecl, isMember: Bool,
         expr: Expression, token: Token, writeReferenceAddrOf: Bool) {
+        //
+        // Quick hack to change the output from 'this' to '_this'.
+        // This saves us from having to mess around with this in the middle phase.
+        //
+        if (vDecl name == "this")
+            vDecl name = "_this"
 
         if(isMember && !(vDecl isExtern() && vDecl isStatic())) {
             casted := false
