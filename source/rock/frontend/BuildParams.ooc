@@ -259,6 +259,8 @@ BuildParams: class {
     obfuscate := false
     obfuscator: Obfuscator
 
+    allowSuperWhenShadowing := false
+
     validBinaryName?: func (name: String) -> Bool {
         if (File new(name) dir?()) {
             stderr write("Naming conflict (output binary) : There is already a directory called %s.\nTry a different name, e.g. '-o=%s2'\n" format(name, name))

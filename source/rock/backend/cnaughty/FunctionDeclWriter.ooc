@@ -120,7 +120,7 @@ FunctionDeclWriter: abstract class extends Skeleton {
                     if(baseType != null && !isInterface) {
                         current app("("). app(baseType getNonMeta() getInstanceType()). app(")")
                     }
-                    current app("this")
+                    current app("_this")
                     if(isInterface) current app(".obj")
                 case ArgsWriteModes TYPES_ONLY =>
                     if(isInterface) {
@@ -129,7 +129,7 @@ FunctionDeclWriter: abstract class extends Skeleton {
                         current app(type)
                     }
                 case =>
-                    type write(current, "this")
+                    type write(current, "_this")
             }
         }
 

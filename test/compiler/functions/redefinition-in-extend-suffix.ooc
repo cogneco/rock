@@ -11,13 +11,13 @@ describe("redefinition in extend with suffix should work", ||
 
 // support code
 
-extend ArrayList<T> {
+extend ArrayList<Int> {
     exists?: func -> Bool {
         return false
     }
 }
 
-extend ArrayList<T> {
+extend ArrayList<String> {
     exists?: func ~string (i: String) -> Bool{
         return true
     }

@@ -2,13 +2,13 @@
 
 import structs/ArrayList
 
-extend ArrayList<T> {
+extend ArrayList<Int> {
     exists?: func -> Bool{
         return false
     }
 }
 
-extend ArrayList<t> {
+extend ArrayList<String> {
     exists?: func (i: String) -> Bool{
         return true
     }

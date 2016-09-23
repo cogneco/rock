@@ -198,6 +198,12 @@ CGenerator: class extends Skeleton {
 
     /** Write a variable declaration */
     visitVariableDecl: func (vDecl: VariableDecl) {
+        //
+        // Quick hack to change the output from 'this' to '_this'.
+        // This saves us from having to mess around with this in the middle phase.
+        //
+        if (vDecl name == "this")
+            vDecl name = "_this"
         if(vDecl isExtern() && !vDecl isProto()) {
             return
         }
