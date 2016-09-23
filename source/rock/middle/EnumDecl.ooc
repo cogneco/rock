@@ -2,7 +2,7 @@ import structs/[ArrayList, HashMap]
 import ../io/TabbedWriter
 import TypeDecl, Declaration, Visitor, Node, VariableAccess, Type,
        VariableDecl, IntLiteral, FloatLiteral, Expression, FunctionDecl,
-       CoverDecl, Module, StructLiteral, BaseType, Version, Return
+       CoverDecl, Module, StructLiteral, BaseType, Version, Return, ArrayLiteral
 import tinker/[Trail, Resolver, Response, Errors]
 import ../frontend/Token
 
@@ -16,10 +16,13 @@ EnumDecl: class extends TypeDecl {
     valuesGlobal: VariableDecl
     valuesCoverDeclSuffix := "__values_t"
     valuesGlobalSuffix := "__values"
+    reservedFunctionNames := ArrayList<String> new()
 
     init: func ~enumDecl(.name, .token) {
         super(name, token)
         fromType = instanceType
+        reservedFunctionNames add("count")
+        reservedFunctionNames add("values")
     }
 
     setFromType: func (=fromType) {}
@@ -37,10 +40,14 @@ EnumDecl: class extends TypeDecl {
 
         if (valuesCoverDecl == null) {
             createCovers(trail)
-            if (fn := getMeta() lookupFunction("count", null)) {
-                res throwError(UseOfReservedNameInEnum new(fn token, "count"))
+            for (name in reservedFunctionNames) {
+                if (fn := getMeta() lookupFunction(name, null)) {
+                    res throwError(UseOfReservedNameInEnum new(fn token, name))
+                }
             }
-            addFunction(generateCountFunction(valuesCoverDecl variables size))
+            valuesCount := valuesCoverDecl variables size
+            addFunction(generateCountFunction(valuesCount))
+            addFunction(generateValuesFunction())
             res wholeAgain(this, "need to resolve coverdecls for enum")
         }
 
@@ -52,8 +59,36 @@ EnumDecl: class extends TypeDecl {
         result setSuffix("generated")
         result setStatic(true)
         result isGenerated = true
+        result hasBody = true
         result setReturnType(BaseType new("Int", nullToken))
         result getBody() add(Return new(IntLiteral new(count, nullToken), nullToken))
+        result
+    }
+
+    generateValuesFunction: func -> FunctionDecl {
+        result := FunctionDecl new("values", nullToken)
+        typeName := match lastElementValue {
+            case intLiteral: IntLiteral => "Int"
+            case floatLiteral: FloatLiteral => "Float"
+        }
+        arrayType := ArrayType new(BaseType new(typeName, nullToken), null, nullToken)
+        arrayLiteral := ArrayLiteral new(token)
+        arrayLiteral type = PointerType new(BaseType new(typeName, nullToken), nullToken)
+        arrayElements := arrayLiteral elements
+        for (v in getMeta() variables) {
+            enumElementValue := v as EnumElement value
+            item := match lastElementValue {
+                case intLiteral: IntLiteral => enumElementValue as IntLiteral
+                case floatLiteral: FloatLiteral => enumElementValue as FloatLiteral
+            }
+            arrayElements add(item clone())
+        }
+        result setSuffix("generated")
+        result setStatic(true)
+        result isGenerated = true
+        result hasBody = true
+        result setReturnType(arrayType)
+        result getBody() add(Return new(arrayLiteral, nullToken))
         result
     }
 
@@ -196,6 +231,6 @@ ImpossibleIncrement: class extends Error {
 
 UseOfReservedNameInEnum: class extends Error {
     init: func (.token, name: String) {
-        super(token, "'%s' is a reserved name for an auto-generated function" format(name))
+        super(token, "'%s' is a reserved function name in enums" format(name))
     }
 }
