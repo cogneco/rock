@@ -200,6 +200,8 @@ BuildParams: class {
     debugLoop := false
     debugLibcache := false
     debugTemplates := false
+    printAst := false
+    printAstFilters: ArrayList<String>
 
     // Ignore these defines when trying to determine if a cached lib is up-to-date or not
     ignoredDefines := ArrayList<String> new()
