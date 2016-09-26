@@ -1,5 +1,5 @@
 import io/Writer
-import structs/List
+import structs/[List, ArrayList]
 
 import rock/io/TabbedWriter
 
@@ -36,7 +36,7 @@ PaddyTabbyWriter: class extends TabbedWriter {
     writeWidth: SizeT
     padChar: Char
     formattedStringPrefix: String
-    init: func (.stream, writeWidth: SizeT = 18, padChar: Char = '.', formattedStringPrefix: String = ": ") {
+    init: func (.stream, writeWidth: SizeT = 20, padChar: Char = '.', formattedStringPrefix: String = ": ") {
         super(stream)
         this writeWidth = writeWidth
         this padChar = padChar
@@ -93,21 +93,21 @@ AstPrinter: class extends Visitor {
         }
         result
     }
-    getModuleName: func (node: Node) -> String {
-        node ? node token module getFullName() : NullString
+    getNodeModuleName: func (node: Node) -> String {
+        node token module ? node token module getFullName() : NullString
     }
     getNodeToString: func (node: Node) -> String {
         node ? node toString() : NullString
     }
-    getNodeYesOrNo: func (node: Node) -> String {
-        node ? "Yes" : "No"
+    getNodeAddressAndToString: func (node: Node) -> String {
+        "%p --- %s" format(node class&, getNodeToString(node))
     }
-    isConditional: func (node: Node) -> Bool {
+    isTypeDeclaration: func (node: Node) -> Bool {
         result := true
-        match (node) {
-            case if_: If =>
-            case else_: Else =>
-            case while_: While =>
+        match (node class) {
+            case ClassDecl =>
+            case CoverDecl =>
+            case EnumDecl =>
             case =>
                 result = false
         }
@@ -116,23 +116,95 @@ AstPrinter: class extends Visitor {
     printNode: func (node: Node) {
         if (node != null && filterMatch?(node)) {
             writer write("%s %c" format(node class name, '{')) . tab()
-            writer nl() . writePadded("Module", "%s", node token module ? node token module getFullName() : NullString)
+            writer nl() . writePadded("Module", "%s", getNodeModuleName(node))
             writer nl() . writePadded("Address", "%p", node class&)
-            description: String
-            match (node) {
-                case while_: While =>
-                    description = getNodeToString(while_ condition)
-                case if_: If =>
-                    description = (if_ getElse() ? "else if (%s)" : "if (%s)") format(getNodeToString(if_ condition))
-                // these nodes could potentially output a large string, so we ignore them
-                case else_: Else =>
-                case scope: Scope =>
-                case block: Block =>
-                case =>
-                    description = getNodeToString(node)
-            }
-            writer nl() . writePadded("Description", "%s", description)
+            printNodeDescription(node)
+            printNodeProperties(node)
             writer untab() . nl() . app('}') . newUntabbedLine()
+        }
+    }
+    printNodeDescription: func (node: Node) {
+        description: String
+        match (node) {
+            // these nodes get some custom treatment
+            case if_: If =>
+                description = (if_ getElse() ? "else if (%s)" : "if (%s)") format(getNodeToString(if_ condition))
+            // these nodes could potentially output a large string or can not be usefully described in a short way, so we ignore them
+            case else_: Else =>
+            case scope: Scope =>
+            case block: Block =>
+            // the rest we print using its toString() method
+            case =>
+                description = getNodeToString(node)
+        }
+        if (description) {
+            writer nl() . writePadded("Description", "%s", description)
+        }
+    }
+    printNodeProperties: func (node: Node) {
+        // here we print some useful properties of interesting nodes
+        match (node) {
+            case classDecl: ClassDecl =>
+                if (classDecl isMeta) {
+                    writer nl() . writePadded("Non-meta type", "%s", getNodeAddressAndToString(classDecl getNonMeta()))
+                }
+            case coverDecl: CoverDecl =>
+            case enumDecl: EnumDecl =>
+                writer nl() . writePadded("Increment operator", "%c", enumDecl incrementOper)
+                writer nl() . writePadded("Increment step size", "%d", enumDecl incrementStep)
+                writer nl() . writePadded("Values cover", "%s", getNodeAddressAndToString(enumDecl valuesCoverDecl))
+            case functionDecl: FunctionDecl =>
+                printFunctionDeclProperties(functionDecl)
+            case functionCall: FunctionCall =>
+                writer nl() . writePadded("Resolved", "%s", functionCall isResolved() toString())
+                writer nl() . writePadded("Ref score", "%d", functionCall refScore)
+                writer nl() . writePadded("Reference", "%s", getNodeAddressAndToString(functionCall getRef()))
+                writer nl() . writePadded("Virtual call", "%s", functionCall virtual toString())
+            case variableDecl: VariableDecl =>
+            case variableAccess: VariableAccess =>
+                writer nl() . writePadded("Reference", "%s", getNodeAddressAndToString(variableAccess getRef()))
+        }
+        // print common type properties
+        if (isTypeDeclaration(node)) {
+            printTypeProperties(node as TypeDecl)
+        }
+    }
+    printTypeProperties: func (node: TypeDecl) {
+        if (!node isMeta) {
+            writer nl() . writePadded("Metaclass", "%s", getNodeAddressAndToString(node getMeta()))
+        }
+    }
+    listToSequenceString: func (list: List<String>) -> String {
+        result: String = ""
+        size := list getSize()
+        if (size > 0) {
+            for (i in 0 .. size - 1) {
+                result = result append(list[i] + ", ")
+            }
+            result = result append(list[size - 1])
+        } else {
+            result = "<none>"
+        }
+        result
+    }
+    printFunctionDeclProperties: func (node: FunctionDecl) {
+        writer nl() . writePadded("Member function", "%s", node isMember() toString())
+        if (node isMember()) {
+            modifiers := ArrayList<String> new(5)
+            // Since 'foo: static virtual final override func' actually compiles...
+            if (node isStatic()) {
+                modifiers add("static")
+            }
+            if (node isVirtual()) {
+                modifiers add("virtual")
+            }
+            if (node isFinal()) {
+                modifiers add("final")
+            }
+            if (node isOverride()) {
+                modifiers add("override")
+            }
+            writer nl() . writePadded("Modifiers", "%s", listToSequenceString(modifiers))
         }
     }
     visitModule: func (node: Module) {
