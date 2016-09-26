@@ -93,15 +93,48 @@ AstPrinter: class extends Visitor {
         }
         result
     }
+    getModuleName: func (node: Node) -> String {
+        node ? node token module getFullName() : NullString
+    }
+    getNodeToString: func (node: Node) -> String {
+        node ? node toString() : NullString
+    }
+    getNodeYesOrNo: func (node: Node) -> String {
+        node ? "Yes" : "No"
+    }
+    isConditional: func (node: Node) -> Bool {
+        result := true
+        match (node) {
+            case if_: If =>
+            case else_: Else =>
+            case while_: While =>
+            case =>
+                result = false
+        }
+        result
+    }
     printNode: func (node: Node) {
-        if (filterMatch?(node)) {
+        if (node != null && filterMatch?(node)) {
             writer write("%s %c" format(node class name, '{')) . tab()
             writer nl() . writePadded("Module", "%s", node token module ? node token module getFullName() : NullString)
             writer nl() . writePadded("Address", "%p", node class&)
+            description: String
+            match (node) {
+                case while_: While =>
+                    description = getNodeToString(while_ condition)
+                case if_: If =>
+                    description = (if_ getElse() ? "else if (%s)" : "if (%s)") format(getNodeToString(if_ condition))
+                // these nodes could potentially output a large string, so we ignore them
+                case else_: Else =>
+                case scope: Scope =>
+                case block: Block =>
+                case =>
+                    description = getNodeToString(node)
+            }
+            writer nl() . writePadded("Description", "%s", description)
             writer untab() . nl() . app('}') . newUntabbedLine()
         }
     }
-
     visitModule: func (node: Module) {
         printNode(node)
         for (typeDecl in node types)
@@ -114,6 +147,7 @@ AstPrinter: class extends Visitor {
             operatorDecl accept(this)
         for (funcType in node funcTypesMap)
             funcType accept(this)
+        node body accept(this)
     }
     visitInterfaceDecl: func (node: InterfaceDecl) {
         printNode(node)
@@ -125,7 +159,7 @@ AstPrinter: class extends Visitor {
         visitTypeDecl(node)
     }
     visitEnumDecl: func (node: EnumDecl) {
-        printNode(node)
+        visitTypeDecl(node)
     }
     visitTypeDecl: func (node: TypeDecl) {
         printNode(node)
@@ -138,6 +172,7 @@ AstPrinter: class extends Visitor {
     }
     visitFunctionDecl: func (node: FunctionDecl) {
         printNode(node)
+        node getBody() accept(this)
     }
     visitVariableDecl: func (node: VariableDecl) {
         printNode(node)
@@ -150,12 +185,17 @@ AstPrinter: class extends Visitor {
     }
     visitIf: func (node: If) {
         printNode(node)
+        acceptIfNotNull(node condition)
+        acceptIfNotNull(node getElse())
+        acceptIfNotNull(node getBody())
     }
     visitElse: func (node: Else) {
         printNode(node)
+        acceptIfNotNull(node condition)
     }
     visitWhile: func (node: While) {
         printNode(node)
+        acceptIfNotNull(node condition)
     }
     visitForeach: func (node: Foreach) {
         printNode(node)
@@ -248,6 +288,9 @@ AstPrinter: class extends Visitor {
     }
     visitScope: func (node: Scope) {
         printNode(node)
+        for (statement in node) {
+            statement accept(this)
+        }
     }
     visitTuple: func (node: Tuple) {
         printNode(node)
