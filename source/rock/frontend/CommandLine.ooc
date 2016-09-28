@@ -6,6 +6,7 @@ import text/StringTokenizer
 
 // our stuff
 import Help, Token, BuildParams, AstBuilder, PathList, Target
+import rock/frontend/AstPrinter
 import rock/frontend/drivers/[Driver, SequenceDriver, MakeDriver, DummyDriver, CCompiler, AndroidDriver, CMakeDriver, Obfuscator]
 import rock/backend/json/JSONGenerator
 import rock/backend/lua/LuaGenerator
@@ -149,6 +150,13 @@ CommandLine: class {
 
                     if(!longOption) warnUseLong("debugtemplates")
                     params debugTemplates = true
+
+                } else if (option startsWith?("printAst")) {
+
+                    if (!longOption) warnUseLong("printAst")
+                    filterInput := option substring("printAst=" length())
+                    params printAst = true
+                    params printAstFilters = filterInput size > 0 ? filterInput split(',') : ArrayList<String> new()
 
                 } else if(option startsWith?("ignoredefine=")) {
 
@@ -705,6 +713,10 @@ CommandLine: class {
         // phase 2bis: classify imports
         for (module in allModules) {
             ImportClassifier classify(module)
+        }
+
+        if (params printAst) {
+            AstPrinter run(params printAstFilters, allModules)
         }
 
         if(params backend == "c") {
