@@ -6,6 +6,7 @@ Summary:
   - The C generator now outputs `_this` instead of `this`
   - rock now auto-generates count() and values() functions for enums.
   - Improved the obfuscator
+  - Added an AST printer, see `rock --help` on how to use it.
 
 ## 1.0.21 (2016-08-29)
   - Obfuscator hotfix
