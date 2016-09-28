@@ -9,7 +9,7 @@ import PathList, CommandLine, Target
 import drivers/CCompiler
 import rock/middle/[Module, UseDef]
 import rock/middle/tinker/Errors
-import rock/frontend/drivers/[Driver, SequenceDriver, Obfuscator]
+import rock/frontend/drivers/[Driver, SequenceDriver]
 
 /**
  * All the parameters for a build are stored there.
@@ -259,7 +259,7 @@ BuildParams: class {
     driver := SequenceDriver new(this)
 
     obfuscate := false
-    obfuscator: Obfuscator
+    //obfuscator: Obfuscator
 
     allowSuperWhenShadowing := false
 

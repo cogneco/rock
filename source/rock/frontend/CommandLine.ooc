@@ -7,7 +7,7 @@ import text/StringTokenizer
 // our stuff
 import Help, Token, BuildParams, AstBuilder, PathList, Target
 import rock/frontend/AstPrinter
-import rock/frontend/drivers/[Driver, SequenceDriver, MakeDriver, DummyDriver, CCompiler, AndroidDriver, CMakeDriver, Obfuscator]
+import rock/frontend/drivers/[Driver, SequenceDriver, MakeDriver, DummyDriver, CCompiler, AndroidDriver, CMakeDriver]
 import rock/backend/json/JSONGenerator
 import rock/backend/lua/LuaGenerator
 import rock/middle/[Module, Import, UseDef, Use]
@@ -396,8 +396,7 @@ CommandLine: class {
 
                 } else if (option startsWith?("obfuscate=")) {
                     params obfuscate = true
-                    params obfuscator = Obfuscator new(params, option substring("obfuscate=" length()))
-                    params lineDirectives = false
+                    CommandLine warn("The obfuscator is not working yet...")
                 } else if (option == "allow-super-when-shadowing") {
 
                     params allowSuperWhenShadowing = true
@@ -724,7 +723,7 @@ CommandLine: class {
             if(params driver != null) {
                 code := 0
                 compileMs := Time measure(||
-                    code = params obfuscate ? params obfuscator compile(module) : params driver compile(module)
+                    code = params driver compile(module)
                 )
                 if(code == 0) {
                     if (params timing) {
