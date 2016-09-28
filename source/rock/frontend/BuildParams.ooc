@@ -10,6 +10,7 @@ import drivers/CCompiler
 import rock/middle/[Module, UseDef]
 import rock/middle/tinker/Errors
 import rock/frontend/drivers/[Driver, SequenceDriver]
+import rock/frontend/obfuscator/Obfuscator
 
 /**
  * All the parameters for a build are stored there.
@@ -259,7 +260,7 @@ BuildParams: class {
     driver := SequenceDriver new(this)
 
     obfuscate := false
-    //obfuscator: Obfuscator
+    obfuscatorMappingFile: String
 
     allowSuperWhenShadowing := false
 

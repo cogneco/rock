@@ -8,6 +8,7 @@ import text/StringTokenizer
 import Help, Token, BuildParams, AstBuilder, PathList, Target
 import rock/frontend/AstPrinter
 import rock/frontend/drivers/[Driver, SequenceDriver, MakeDriver, DummyDriver, CCompiler, AndroidDriver, CMakeDriver]
+import rock/frontend/obfuscator/Obfuscator
 import rock/backend/json/JSONGenerator
 import rock/backend/lua/LuaGenerator
 import rock/middle/[Module, Import, UseDef, Use]
@@ -395,8 +396,10 @@ CommandLine: class {
                     }
 
                 } else if (option startsWith?("obfuscate=")) {
+
                     params obfuscate = true
-                    CommandLine warn("The obfuscator is not working yet...")
+                    params obfuscatorMappingFile = option substring("obfuscate=" length())
+
                 } else if (option == "allow-super-when-shadowing") {
 
                     params allowSuperWhenShadowing = true
@@ -712,6 +715,18 @@ CommandLine: class {
         // phase 2bis: classify imports
         for (module in allModules) {
             ImportClassifier classify(module)
+        }
+
+        if (params obfuscate) {
+            obfuscateMs := Time measure(||
+                Obfuscator run(params, allModules)
+                if(!Tinkerer new(params) process(allModules)) {
+                    failure(params)
+                }
+            )
+            if (params timing) {
+                "Obfuscation took %d ms" printfln(obfuscateMs)
+            }
         }
 
         if (params printAst) {
