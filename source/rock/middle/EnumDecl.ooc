@@ -45,8 +45,7 @@ EnumDecl: class extends TypeDecl {
                     res throwError(UseOfReservedNameInEnum new(fn token, name))
                 }
             }
-            valuesCount := valuesCoverDecl variables size
-            addFunction(generateCountFunction(valuesCount))
+            addFunction(generateCountFunction())
             addFunction(generateValuesFunction())
             res wholeAgain(this, "need to resolve coverdecls for enum")
         }
@@ -54,34 +53,31 @@ EnumDecl: class extends TypeDecl {
         Response OK
     }
 
-    generateCountFunction: func (count: Int) -> FunctionDecl {
-        result := FunctionDecl new("count", nullToken)
+    generateCountFunction: func -> FunctionDecl {
+        result := FunctionDecl new("count", token)
         result setSuffix("generated")
         result setStatic(true)
         result isGenerated = true
         result hasBody = true
         result setReturnType(BaseType new("Int", nullToken))
-        result getBody() add(Return new(IntLiteral new(count, nullToken), nullToken))
+        result getBody() add(Return new(IntLiteral new(getMeta() getVariables() size, nullToken), nullToken))
         result
     }
 
     generateValuesFunction: func -> FunctionDecl {
-        result := FunctionDecl new("values", nullToken)
+        result := FunctionDecl new("values", token)
         typeName := match lastElementValue {
             case intLiteral: IntLiteral => "Int"
             case floatLiteral: FloatLiteral => "Float"
+            // Probably a BinaryOp, so we use Int
+            case => "Int"
         }
         arrayType := ArrayType new(BaseType new(typeName, nullToken), null, nullToken)
         arrayLiteral := ArrayLiteral new(token)
         arrayLiteral type = PointerType new(BaseType new(typeName, nullToken), nullToken)
         arrayElements := arrayLiteral elements
         for (v in getMeta() variables) {
-            enumElementValue := v as EnumElement value
-            item := match lastElementValue {
-                case intLiteral: IntLiteral => enumElementValue as IntLiteral
-                case floatLiteral: FloatLiteral => enumElementValue as FloatLiteral
-            }
-            arrayElements add(item clone())
+            arrayElements add((v as EnumElement value) clone())
         }
         result setSuffix("generated")
         result setStatic(true)
