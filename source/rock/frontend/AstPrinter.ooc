@@ -192,6 +192,9 @@ AstPrinter: class extends Visitor {
         if (node isMember()) {
             modifiers := ArrayList<String> new(5)
             // Since 'foo: static virtual final override func' actually compiles...
+            if (node isAbstract()) {
+                modifiers add("abstract")
+            }
             if (node isStatic()) {
                 modifiers add("static")
             }
@@ -248,6 +251,8 @@ AstPrinter: class extends Visitor {
     }
     visitVariableDecl: func (node: VariableDecl) {
         printNode(node)
+        acceptIfNotNull(node getExpr())
+        acceptIfNotNull(node fDecl)
     }
     visitType: func (node: Type) {
         printNode(node)
@@ -271,18 +276,30 @@ AstPrinter: class extends Visitor {
     }
     visitForeach: func (node: Foreach) {
         printNode(node)
+        acceptIfNotNull(node indexVariable)
+        acceptIfNotNull(node variable)
+        acceptIfNotNull(node collection)
+        acceptIfNotNull(node body)
     }
     visitMatch: func (node: Match) {
         printNode(node)
+        acceptIfNotNull(node getExpr())
+        for (caseDecl in node getCases()) {
+            acceptIfNotNull(caseDecl getExpr())
+            caseDecl getBody() accept(this)
+        }
     }
     visitFlowControl: func (node: FlowControl) {
         printNode(node)
     }
     visitBlock: func (node: Block) {
         printNode(node)
+        node getBody() accept(this)
     }
     visitRangeLiteral: func (node: RangeLiteral) {
         printNode(node)
+        acceptIfNotNull(node lower)
+        acceptIfNotNull(node upper)
     }
     visitCharLiteral: func (node: CharLiteral) {
         printNode(node)
@@ -292,9 +309,15 @@ AstPrinter: class extends Visitor {
     }
     visitArrayLiteral: func (node: ArrayLiteral) {
         printNode(node)
+        for (expression in node getElements()) {
+            expression accept(this)
+        }
     }
     visitStructLiteral: func (node: StructLiteral) {
         printNode(node)
+        for (expression in node getElements()) {
+            expression accept(this)
+        }
     }
     visitBoolLiteral: func (node: BoolLiteral) {
         printNode(node)
@@ -309,51 +332,93 @@ AstPrinter: class extends Visitor {
         printNode(node)
     }
     visitVariableAccess: func (node: VariableAccess) {
+        visitVariableAccess(node, false)
+    }
+    visitVariableAccess: func ~refAddr (node: VariableAccess, writeRefAddrOf: Bool) {
         printNode(node)
+        acceptIfNotNull(node expr)
     }
     visitArrayAccess: func (node: ArrayAccess) {
         printNode(node)
+        acceptIfNotNull(node getArray())
+        for (expression in node indices) {
+            expression accept(this)
+        }
     }
     visitFunctionCall: func (node: FunctionCall) {
         printNode(node)
+        for (expression in node args) {
+            expression accept(this)
+        }
+        for (expression in node typeArgs) {
+            expression accept(this)
+        }
+        for (expression in node returnArgs) {
+            expression accept(this)
+        }
+        if (node varArgs) {
+            for (expression in node varArgs) {
+                expression accept(this)
+            }
+        }
+        acceptIfNotNull(node getExpr())
+
     }
     visitArrayCreation: func (node: ArrayCreation) {
         printNode(node)
+        acceptIfNotNull(node expr)
     }
     visitBinaryOp: func (node: BinaryOp) {
         printNode(node)
+        acceptIfNotNull(node getLeft())
+        acceptIfNotNull(node getRight())
     }
     visitUnaryOp: func (node: UnaryOp) {
         printNode(node)
+        acceptIfNotNull(node inner)
     }
     visitParenthesis: func (node: Parenthesis) {
         printNode(node)
+        acceptIfNotNull(node inner)
     }
     visitReturn: func (node: Return) {
         printNode(node)
+        acceptIfNotNull(node expr)
     }
     visitCast: func (node: Cast) {
         printNode(node)
+        acceptIfNotNull(node inner)
     }
     visitComparison: func (node: Comparison) {
         printNode(node)
+        acceptIfNotNull(node left)
+        acceptIfNotNull(node right)
     }
     visitTernary: func (node: Ternary) {
         printNode(node)
+        acceptIfNotNull(node condition)
+        acceptIfNotNull(node ifTrue)
+        acceptIfNotNull(node ifFalse)
     }
     visitVarArg: func (node: VarArg) {
         printNode(node)
+        "vararg: %s" printfln(node toString())
         // DotArg
         // AssArg
     }
     visitAddressOf: func (node: AddressOf) {
         printNode(node)
+        acceptIfNotNull(node expr)
     }
     visitDereference: func (node: Dereference) {
         printNode(node)
+        acceptIfNotNull(node expr)
     }
     visitCommaSequence: func (node: CommaSequence) {
         printNode(node)
+        for (statement in node getBody()) {
+            statement accept(this)
+        }
     }
     visitVersionBlock: func (node: VersionBlock) {
         printNode(node)
@@ -366,5 +431,8 @@ AstPrinter: class extends Visitor {
     }
     visitTuple: func (node: Tuple) {
         printNode(node)
+        for (expression in node getElements()) {
+            expression accept(this)
+        }
     }
 }
