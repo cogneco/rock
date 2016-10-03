@@ -402,7 +402,6 @@ AstPrinter: class extends Visitor {
     }
     visitVarArg: func (node: VarArg) {
         printNode(node)
-        "vararg: %s" printfln(node toString())
         // DotArg
         // AssArg
     }
