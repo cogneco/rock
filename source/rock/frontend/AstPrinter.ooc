@@ -213,15 +213,15 @@ AstPrinter: class extends Visitor {
     visitModule: func (node: Module) {
         printNode(node)
         for (typeDecl in node types)
-            typeDecl accept(this)
+            acceptIfNotNull(typeDecl)
         for (addonDecl in node addons)
-            addonDecl accept(this)
+            acceptIfNotNull(addonDecl)
         for (functionDecl in node functions)
-            functionDecl accept(this)
+            acceptIfNotNull(functionDecl)
         for (operatorDecl in node operators)
-            operatorDecl accept(this)
+            acceptIfNotNull(operatorDecl)
         for (funcType in node funcTypesMap)
-            funcType accept(this)
+            acceptIfNotNull(funcType)
         node body accept(this)
     }
     visitInterfaceDecl: func (node: InterfaceDecl) {
@@ -239,15 +239,15 @@ AstPrinter: class extends Visitor {
     visitTypeDecl: func (node: TypeDecl) {
         printNode(node)
         for (variableDecl in node variables)
-            variableDecl accept(this)
+            acceptIfNotNull(variableDecl)
         for (functionDecl in node functions)
-            functionDecl accept(this)
+            acceptIfNotNull(functionDecl)
         for (operatorDecl in node operators)
-            operatorDecl accept(this)
+            acceptIfNotNull(operatorDecl)
     }
     visitFunctionDecl: func (node: FunctionDecl) {
         printNode(node)
-        node getBody() accept(this)
+        acceptIfNotNull(node getBody())
     }
     visitVariableDecl: func (node: VariableDecl) {
         printNode(node)
@@ -286,7 +286,7 @@ AstPrinter: class extends Visitor {
         acceptIfNotNull(node getExpr())
         for (caseDecl in node getCases()) {
             acceptIfNotNull(caseDecl getExpr())
-            caseDecl getBody() accept(this)
+            acceptIfNotNull(caseDecl getBody())
         }
     }
     visitFlowControl: func (node: FlowControl) {
@@ -294,7 +294,7 @@ AstPrinter: class extends Visitor {
     }
     visitBlock: func (node: Block) {
         printNode(node)
-        node getBody() accept(this)
+        acceptIfNotNull(node getBody())
     }
     visitRangeLiteral: func (node: RangeLiteral) {
         printNode(node)
@@ -310,13 +310,13 @@ AstPrinter: class extends Visitor {
     visitArrayLiteral: func (node: ArrayLiteral) {
         printNode(node)
         for (expression in node getElements()) {
-            expression accept(this)
+            acceptIfNotNull(expression)
         }
     }
     visitStructLiteral: func (node: StructLiteral) {
         printNode(node)
         for (expression in node getElements()) {
-            expression accept(this)
+            acceptIfNotNull(expression)
         }
     }
     visitBoolLiteral: func (node: BoolLiteral) {
@@ -342,23 +342,23 @@ AstPrinter: class extends Visitor {
         printNode(node)
         acceptIfNotNull(node getArray())
         for (expression in node indices) {
-            expression accept(this)
+            acceptIfNotNull(expression)
         }
     }
     visitFunctionCall: func (node: FunctionCall) {
         printNode(node)
         for (expression in node args) {
-            expression accept(this)
+            acceptIfNotNull(expression)
         }
         for (expression in node typeArgs) {
-            expression accept(this)
+            acceptIfNotNull(expression)
         }
         for (expression in node returnArgs) {
-            expression accept(this)
+            acceptIfNotNull(expression)
         }
         if (node varArgs) {
             for (expression in node varArgs) {
-                expression accept(this)
+                acceptIfNotNull(expression)
             }
         }
         acceptIfNotNull(node getExpr())
@@ -402,7 +402,6 @@ AstPrinter: class extends Visitor {
     }
     visitVarArg: func (node: VarArg) {
         printNode(node)
-        "vararg: %s" printfln(node toString())
         // DotArg
         // AssArg
     }
@@ -417,7 +416,7 @@ AstPrinter: class extends Visitor {
     visitCommaSequence: func (node: CommaSequence) {
         printNode(node)
         for (statement in node getBody()) {
-            statement accept(this)
+            acceptIfNotNull(statement)
         }
     }
     visitVersionBlock: func (node: VersionBlock) {
@@ -426,13 +425,13 @@ AstPrinter: class extends Visitor {
     visitScope: func (node: Scope) {
         printNode(node)
         for (statement in node) {
-            statement accept(this)
+            acceptIfNotNull(statement)
         }
     }
     visitTuple: func (node: Tuple) {
         printNode(node)
         for (expression in node getElements()) {
-            expression accept(this)
+            acceptIfNotNull(expression)
         }
     }
 }
