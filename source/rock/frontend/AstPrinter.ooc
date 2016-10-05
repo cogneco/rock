@@ -269,10 +269,12 @@ AstPrinter: class extends Visitor {
     visitElse: func (node: Else) {
         printNode(node)
         acceptIfNotNull(node condition)
+        acceptIfNotNull(node getBody())
     }
     visitWhile: func (node: While) {
         printNode(node)
         acceptIfNotNull(node condition)
+        acceptIfNotNull(node getBody())
     }
     visitForeach: func (node: Foreach) {
         printNode(node)
