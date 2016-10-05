@@ -262,7 +262,9 @@ FunctionCall: class extends Expression {
         if (expr != null && expr instanceOf?(Tuple)) {
             tuple := expr as Tuple
             for(i in 0..tuple elements getSize()) {
-                tuple elements[i] = FunctionCall new(tuple elements[i], this getName(), token)
+                call := this clone()
+                call setExpr(tuple elements[i])
+                tuple elements[i] = call
             }
             if (!trail peek() replace(this, tuple)) {
                 if(res fatal) res throwError(CouldntReplace new(token, this, tuple, trail))
