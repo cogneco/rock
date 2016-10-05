@@ -423,6 +423,7 @@ AstPrinter: class extends Visitor {
     }
     visitVersionBlock: func (node: VersionBlock) {
         printNode(node)
+        acceptIfNotNull(node getBody())
     }
     visitScope: func (node: Scope) {
         printNode(node)
