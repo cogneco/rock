@@ -37,8 +37,6 @@ TargetCollectionResult: class {
 
 TargetCollector: class extends Visitor {
     targetMap: TargetMap
-    trail: Trail
-    resolver: Resolver
     collectionResult: TargetCollectionResult
     init: func (=targetMap) {
         collectionResult = TargetCollectionResult new()
@@ -60,11 +58,28 @@ TargetCollector: class extends Visitor {
         }
         result
     }
+    getSearchKey: func ~variableDecl (node: VariableDecl) -> String {
+        result: String
+        if (node && node isMember()) {
+            searchKeyPrefix := node getOwner() isMeta ? node getOwner() getNonMeta() getName() : node getOwner() getName()
+            result = "#{searchKeyPrefix}.#{node getName()}"
+        }
+        result
+    }
+    checkEnumVariables: func (enumDecl: EnumDecl, enumMetaClass: ClassDecl, valuesCoverDecl: CoverDecl) {
+        for ((index, variableDecl) in valuesCoverDecl getVariables()) {
+            searchKey := "#{enumDecl getName()}.#{variableDecl getName()}"
+            if (mapEntry := targetMap get(searchKey)) {
+                collectionResult addDeclarationNode(TargetNode new(variableDecl, null, mapEntry getNewName()))
+                if (metaVariable := enumMetaClass getVariable(variableDecl getName())) {
+                    collectionResult addDeclarationNode(TargetNode new(metaVariable, null, mapEntry getNewName()))
+                }
+            }
+        }
+    }
     visitModule: func (node: Module) {
-        trail = Trail new(node)
-        resolver = Resolver new(node, node params, Tinkerer new(node params))
         for (typeDecl in node getTypes()) {
-            visitTypeDeclaration(typeDecl)
+            acceptIfNotNull(typeDecl)
         }
         for (operatorDecl in node getOperators()) {
             acceptIfNotNull(operatorDecl)
@@ -84,15 +99,32 @@ TargetCollector: class extends Visitor {
         for (functionDecl in node getFunctions()) {
             acceptIfNotNull(functionDecl)
         }
+        if (!node isMeta) {
+            if (mapEntry := targetMap get(node getName())) {
+                collectionResult addDeclarationNode(TargetNode new(node, null, mapEntry getNewName()))
+            }
+        }
+    }
+    visitInterfaceDecl: func (node: InterfaceDecl) {
+        visitTypeDeclaration(node)
+    }
+    visitClassDecl: func (node: ClassDecl) {
+        visitTypeDeclaration(node)
+    }
+    visitCoverDecl: func (node: CoverDecl) {
+        visitTypeDeclaration(node)
+    }
+    visitEnumDecl: func (node: EnumDecl) {
+        checkEnumVariables(node, node getMeta(), node valuesCoverDecl)
+        visitTypeDeclaration(node)
     }
     visitFunctionDecl: func (node: FunctionDecl) {
         if (node isMember() && !node getOwner() isMeta) {
-            searchKey := getSearchKey(node)
+            searchKey := getSearchKey~functionDecl(node)
             if (searchKey && (mapEntry := targetMap get(searchKey))) {
                 obfuscatedNode := node clone(mapEntry getNewName())
                 obfuscatedNode body = node getBody()
                 visitFunctionDecl~noKeySearch(obfuscatedNode)
-                obfuscatedNode resolve(trail, resolver)
                 collectionResult addDeclarationNode(TargetNode new(node, obfuscatedNode))
             }
         }
@@ -110,6 +142,15 @@ TargetCollector: class extends Visitor {
     visitVariableDecl: func (node: VariableDecl) {
         acceptIfNotNull(node getExpr())
         acceptIfNotNull(node fDecl)
+        if (searchKey := getSearchKey~variableDecl(node)) {
+            if (mapEntry := targetMap get(searchKey)) {
+                match (node) {
+                    case propertyDecl: PropertyDecl =>
+                    case =>
+                        collectionResult addDeclarationNode(TargetNode new(node, null, mapEntry getNewName()))
+                }
+            }
+        }
     }
     visitType: func (node: Type) {
         //
@@ -238,7 +279,7 @@ TargetCollector: class extends Visitor {
         }
     }
     visitVersionBlock: func (node: VersionBlock) {
-        //
+        acceptIfNotNull(node getBody())
     }
     visitScope: func (node: Scope) {
         for (statement in node) {
