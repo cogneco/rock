@@ -37,8 +37,6 @@ TargetCollectionResult: class {
 
 TargetCollector: class extends Visitor {
     targetMap: TargetMap
-    trail: Trail
-    resolver: Resolver
     collectionResult: TargetCollectionResult
     init: func (=targetMap) {
         collectionResult = TargetCollectionResult new()
@@ -80,8 +78,6 @@ TargetCollector: class extends Visitor {
         }
     }
     visitModule: func (node: Module) {
-        trail = Trail new(node)
-        resolver = Resolver new(node, node params, Tinkerer new(node params))
         for (typeDecl in node getTypes()) {
             acceptIfNotNull(typeDecl)
         }
@@ -132,7 +128,6 @@ TargetCollector: class extends Visitor {
                 obfuscatedNode := node clone(mapEntry getNewName())
                 obfuscatedNode body = node getBody()
                 visitFunctionDecl~noKeySearch(obfuscatedNode)
-                obfuscatedNode resolve(trail, resolver)
                 collectionResult addDeclarationNode(TargetNode new(node, obfuscatedNode))
             }
         }
