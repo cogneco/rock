@@ -282,7 +282,7 @@ TargetCollector: class extends Visitor {
         }
     }
     visitVersionBlock: func (node: VersionBlock) {
-        //
+        acceptIfNotNull(node getBody())
     }
     visitScope: func (node: Scope) {
         for (statement in node) {
