@@ -115,10 +115,7 @@ TargetCollector: class extends Visitor {
         visitTypeDeclaration(node)
     }
     visitEnumDecl: func (node: EnumDecl) {
-        meta := node getMeta()
-        valuesCover := node valuesCoverDecl
-        valuesCoverMeta := valuesCover getMeta()
-        checkEnumVariables(node, meta, valuesCover)
+        checkEnumVariables(node, node getMeta(), node valuesCoverDecl)
         visitTypeDeclaration(node)
     }
     visitFunctionDecl: func (node: FunctionDecl) {
