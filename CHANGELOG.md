@@ -7,6 +7,7 @@ Summary:
   - rock now auto-generates count() and values() functions for enums.
   - Improved the obfuscator
   - Added an AST printer, see `rock --help` on how to use it.
+  - You can now call methods that take arguments on tuples
 
 ## 1.0.21 (2016-08-29)
   - Obfuscator hotfix
