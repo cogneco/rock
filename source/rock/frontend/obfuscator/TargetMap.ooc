@@ -6,6 +6,8 @@ TargetMapEntry: class {
     oldName: String
     newName: String
     init: func (=oldName, =newName)
+    getOldName: func -> String { oldName }
+    getNewName: func -> String { newName }
     toString: func -> String {
         "#{oldName}:#{newName}"
     }
