@@ -50,10 +50,17 @@ TargetCollector: class extends Visitor {
     getSearchKey: func ~functionDecl (node: FunctionDecl) -> String {
         result: String
         if (node && node isMember() && !node getOwner() isMeta) {
-            if (node isOverride()) {
-                result = "#{node getOwner() getMeta() getBaseClass(node) getNonMeta() getName()}.#{node getName()}"
+            functionName: String
+            isGetterOrSetter: Bool
+            if (isGetterOrSetter = isPropertyFunction(node)) {
+                functionName = node getName()[5..-3]
             } else {
-                result = "#{node getOwner() getName()}.#{node getName()}"
+                functionName = node getName()
+            }
+            if (node isOverride() || isGetterOrSetter) {
+                result = "#{node getOwner() getMeta() getBaseClass(node) getNonMeta() getName()}.#{functionName}"
+            } else {
+                result = "#{node getOwner() getName()}.#{functionName}"
             }
         }
         result
@@ -77,6 +84,9 @@ TargetCollector: class extends Visitor {
             }
         }
     }
+    isPropertyFunction: func (functionDecl: FunctionDecl) -> Bool {
+        (functionDecl getName() startsWith?("__get") || functionDecl getName() startsWith?("__set")) && functionDecl getName() endsWith?("__")
+    }
     visitModule: func (node: Module) {
         for (typeDecl in node getTypes()) {
             acceptIfNotNull(typeDecl)
@@ -86,6 +96,12 @@ TargetCollector: class extends Visitor {
         }
         for (functionDecl in node getFunctions()) {
             acceptIfNotNull(functionDecl)
+        }
+        for (addon in node addons) {
+            acceptIfNotNull(addon)
+        }
+        for (funcType in node funcTypesMap) {
+            acceptIfNotNull(funcType)
         }
         acceptIfNotNull(node body)
     }
@@ -122,9 +138,11 @@ TargetCollector: class extends Visitor {
         if (node isMember() && !node getOwner() isMeta) {
             searchKey := getSearchKey~functionDecl(node)
             if (searchKey && (mapEntry := targetMap get(searchKey))) {
-                obfuscatedNode := node clone(mapEntry getNewName())
+                newName := isPropertyFunction(node) ? "#{node getName()[0..5]}#{mapEntry getNewName()}__" : mapEntry getNewName()
+                obfuscatedNode := node clone(newName)
                 obfuscatedNode body = node getBody()
                 visitFunctionDecl~noKeySearch(obfuscatedNode)
+                //obfuscatedNode resolve(trail, resolver)
                 collectionResult addDeclarationNode(TargetNode new(node, obfuscatedNode))
             }
         }
@@ -144,11 +162,7 @@ TargetCollector: class extends Visitor {
         acceptIfNotNull(node fDecl)
         if (searchKey := getSearchKey~variableDecl(node)) {
             if (mapEntry := targetMap get(searchKey)) {
-                match (node) {
-                    case propertyDecl: PropertyDecl =>
-                    case =>
-                        collectionResult addDeclarationNode(TargetNode new(node, null, mapEntry getNewName()))
-                }
+                collectionResult addDeclarationNode(TargetNode new(node, null, mapEntry getNewName()))
             }
         }
     }
@@ -264,6 +278,7 @@ TargetCollector: class extends Visitor {
         acceptIfNotNull(node ifFalse)
     }
     visitVarArg: func (node: VarArg) {
+        acceptIfNotNull(node getExpr())
         // DotArg
         // AssArg
     }
