@@ -25,14 +25,31 @@ TargetCollectionResult: class {
     // These are nodes that are referencing declaration nodes, such as FunctionCall, VariableAccess etc.
     //
     referencingNodes: List<TargetNode>
+    //
+    // These are nodes that does not belong to a type.
+    //
+    globalNodes: List<TargetNode>
     init: func {
         declarationNodes = ArrayList<TargetNode> new(256)
         referencingNodes = ArrayList<TargetNode> new(1024)
+        globalNodes = ArrayList<TargetNode> new(256)
     }
     addDeclarationNode: func (node: TargetNode) { declarationNodes add(node) }
     addReferencingNode: func (node: TargetNode) { referencingNodes add(node) }
+    addGlobalNode: func (node: TargetNode) { globalNodes add(node) }
     getDeclarationNodes: func -> List<TargetNode> { declarationNodes }
     getReferencingNodes: func -> List<TargetNode> { referencingNodes }
+    getGlobalNodes: func -> List<TargetNode> { globalNodes }
+    nodeExists?: func (list: List<TargetNode>, astNode: Node) -> Bool {
+        result := false
+        for (node in list) {
+            if (node getAstNode() == astNode) {
+                result = true
+                break
+            }
+        }
+        result
+    }
 }
 
 TargetCollector: class extends Visitor {
@@ -106,6 +123,9 @@ TargetCollector: class extends Visitor {
         acceptIfNotNull(node body)
     }
     visitTypeDeclaration: func (node: TypeDecl) {
+        acceptIfNotNull(node getType())
+        acceptIfNotNull(node getInstanceType())
+        acceptIfNotNull(node getSuperType())
         for (variableDecl in node getVariables()) {
             acceptIfNotNull(variableDecl)
         }
@@ -114,6 +134,9 @@ TargetCollector: class extends Visitor {
         }
         for (functionDecl in node getFunctions()) {
             acceptIfNotNull(functionDecl)
+        }
+        for (addon in node getAddons()) {
+            acceptIfNotNull(addon)
         }
         if (!node isMeta) {
             if (mapEntry := targetMap get(node getName())) {
@@ -142,13 +165,17 @@ TargetCollector: class extends Visitor {
                 obfuscatedNode := node clone(newName)
                 obfuscatedNode body = node getBody()
                 visitFunctionDecl~noKeySearch(obfuscatedNode)
-                //obfuscatedNode resolve(trail, resolver)
                 collectionResult addDeclarationNode(TargetNode new(node, obfuscatedNode))
+            }
+        } else {
+            if (node oDecl) {
+                collectionResult addGlobalNode(TargetNode new(node oDecl, null))
             }
         }
         visitFunctionDecl~noKeySearch(node)
     }
     visitFunctionDecl: func ~noKeySearch (node: FunctionDecl) {
+        acceptIfNotNull(node getReturnType())
         for (variableDecl in node getArguments()) {
             acceptIfNotNull(variableDecl)
         }
@@ -159,6 +186,7 @@ TargetCollector: class extends Visitor {
     }
     visitVariableDecl: func (node: VariableDecl) {
         acceptIfNotNull(node getExpr())
+        acceptIfNotNull(node getType())
         acceptIfNotNull(node fDecl)
         if (searchKey := getSearchKey~variableDecl(node)) {
             if (mapEntry := targetMap get(searchKey)) {
@@ -167,10 +195,14 @@ TargetCollector: class extends Visitor {
         }
     }
     visitType: func (node: Type) {
-        //
+        if (!node void? && (mapEntry := targetMap get(node getName()))) {
+            if (!collectionResult nodeExists?(collectionResult getDeclarationNodes(), node)) {
+                collectionResult addDeclarationNode(TargetNode new(node, null, mapEntry getNewName()))
+            }
+        }
     }
     visitTypeAccess: func (node: TypeAccess) {
-        //
+        acceptIfNotNull(node inner)
     }
     visitIf: func (node: If) {
         acceptIfNotNull(node condition)
@@ -219,6 +251,7 @@ TargetCollector: class extends Visitor {
         visitVariableAccess(node, false)
     }
     visitVariableAccess: func ~refAddr (node: VariableAccess, writeRefAddrOf: Bool) {
+        acceptIfNotNull(node getType())
         acceptIfNotNull(node expr)
     }
     visitArrayAccess: func (node: ArrayAccess) {
@@ -242,6 +275,7 @@ TargetCollector: class extends Visitor {
                 acceptIfNotNull(expression)
             }
         }
+        acceptIfNotNull(node getType())
         acceptIfNotNull(node getExpr())
         if (searchKey := getSearchKey(node getRef())) {
             if (mapEntry := targetMap get(searchKey)) {
@@ -302,6 +336,7 @@ TargetCollector: class extends Visitor {
         }
     }
     visitTuple: func (node: Tuple) {
+        acceptIfNotNull(node getType())
         for (expression in node getElements()) {
             acceptIfNotNull(expression)
         }
