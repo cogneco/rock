@@ -404,6 +404,7 @@ AstPrinter: class extends Visitor {
     }
     visitVarArg: func (node: VarArg) {
         printNode(node)
+        acceptIfNotNull(node getExpr())
         // DotArg
         // AssArg
     }
