@@ -100,6 +100,9 @@ TargetCollector: class extends Visitor {
         for (addon in node addons) {
             acceptIfNotNull(addon)
         }
+        for (funcType in node funcTypesMap) {
+            acceptIfNotNull(funcType)
+        }
         acceptIfNotNull(node body)
     }
     visitTypeDeclaration: func (node: TypeDecl) {
