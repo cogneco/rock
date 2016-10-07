@@ -195,9 +195,13 @@ TargetCollector: class extends Visitor {
         }
     }
     visitType: func (node: Type) {
-        if (!node void? && (mapEntry := targetMap get(node getName()))) {
-            if (!collectionResult nodeExists?(collectionResult getDeclarationNodes(), node)) {
-                collectionResult addDeclarationNode(TargetNode new(node, null, mapEntry getNewName()))
+        targetNode := match (node) {
+            case baseType: BaseType => baseType
+            case sugarType: SugarType => sugarType inner
+        }
+        if (targetNode && !node void? && (mapEntry := targetMap get(node getName()))) {
+            if (!collectionResult nodeExists?(collectionResult getDeclarationNodes(), targetNode)) {
+                collectionResult addDeclarationNode(TargetNode new(targetNode, null, mapEntry getNewName()))
             }
         }
     }

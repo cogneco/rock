@@ -27,9 +27,9 @@ Obfuscator: class {
             match (node getAstNode()) {
                 //case module: Module =>
                 case classDeclaration: ClassDecl =>
-                    This obfuscateType(classDeclaration, node)
+                    This obfuscateTypeDeclaration(classDeclaration, node)
                 case coverDeclaration: CoverDecl =>
-                    This obfuscateType(coverDeclaration, node)
+                    This obfuscateTypeDeclaration(coverDeclaration, node)
                 case enumDeclaration: EnumDecl =>
                     newName := node getAuxiliaryData() as String
                     valuesCoverDecl := enumDeclaration valuesCoverDecl
@@ -37,7 +37,7 @@ Obfuscator: class {
                     valuesCoverDecl name = "#{newName}#{enumDeclaration valuesCoverDeclSuffix}"
                     valuesCoverMeta name = "#{valuesCoverDecl getName()}Class"
                     enumDeclaration valuesGlobal name = "#{newName}#{enumDeclaration valuesGlobalSuffix}"
-                    This obfuscateType(enumDeclaration, node)
+                    This obfuscateTypeDeclaration(enumDeclaration, node)
                 case functionDeclaration: FunctionDecl =>
                     obfuscatedFunctionDeclaration := node getObfuscatedNode() as FunctionDecl
                     owner := functionDeclaration isAbstract() ? functionDeclaration getOwner() : functionDeclaration getOwner() getMeta()
@@ -48,7 +48,11 @@ Obfuscator: class {
                 case type: Type =>
                     match (type) {
                         case baseType: BaseType =>
-                            baseType name = node getAuxiliaryData() as String
+                            newName := node getAuxiliaryData() as String
+                            if (baseType getName() endsWith?("Class")) {
+                                newName = newName append("Class")
+                            }
+                            baseType name = newName
                         case =>
                             noObfuscationMethod = true
                     }
@@ -86,7 +90,7 @@ Obfuscator: class {
             }
         }
     }
-    obfuscateType: static func (typeDecl: TypeDecl, targetNode: TargetNode) {
+    obfuscateTypeDeclaration: static func (typeDecl: TypeDecl, targetNode: TargetNode) {
         newName := targetNode getAuxiliaryData() as String
         typeDecl name = newName
         if (meta := typeDecl getMeta()) {
