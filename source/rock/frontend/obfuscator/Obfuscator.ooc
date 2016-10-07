@@ -25,7 +25,11 @@ Obfuscator: class {
         noObfuscationMethod: static Bool = false
         for (node in This declarationNodes) {
             match (node getAstNode()) {
-                //case module: Module =>
+                case module: Module =>
+                    newName := node getAuxiliaryData() as String
+                    module simpleName = newName
+                    module underName = "__#{newName}__"
+                    module isObfuscated = true
                 case classDeclaration: ClassDecl =>
                     This obfuscateTypeDeclaration(classDeclaration, node)
                 case coverDeclaration: CoverDecl =>
