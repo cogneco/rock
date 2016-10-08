@@ -2,7 +2,7 @@ import structs/[List, ArrayList]
 
 import rock/frontend/[BuildParams, CommandLine]
 import rock/middle/[Type, BaseType, Node, Module, TypeDecl, ClassDecl, CoverDecl, EnumDecl,
-    FunctionDecl, OperatorDecl, FunctionCall, VariableDecl, VariableAccess]
+                    FunctionDecl, OperatorDecl, FunctionCall, VariableDecl, VariableAccess]
 
 import [TargetMap, TargetNode, TargetCollector]
 
@@ -28,7 +28,7 @@ Obfuscator: class {
                 case module: Module =>
                     newName := node getAuxiliaryData() as String
                     module simpleName = newName
-                    module underName = "__#{newName}__"
+                    module underName = "#{newName}_"
                     module isObfuscated = true
                 case classDeclaration: ClassDecl =>
                     This obfuscateTypeDeclaration(classDeclaration, node)
@@ -87,8 +87,14 @@ Obfuscator: class {
     obfuscateGlobalNodes: static func {
         for (node in This globalNodes) {
             match (node getAstNode()) {
+                case coverDecl: CoverDecl =>
+                    coverDecl name = node getAuxiliaryData() as String
                 case operatorDecl: OperatorDecl =>
                     operatorDecl computeName()
+                case functionDecl: FunctionDecl =>
+                    functionDecl setName(node getAuxiliaryData() as String)
+                case variableDecl: VariableDecl =>
+                    variableDecl name = node getAuxiliaryData() as String
                 case =>
                     printErrorAndTerminate("No update method for node type '%s'" format(node getAstNode() class name))
             }
