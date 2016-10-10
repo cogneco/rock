@@ -12,7 +12,6 @@ import rock/middle/[Addon, AddressOf, Argument, ArrayAccess, ArrayCreation, Arra
     Statement, StringLiteral, StructLiteral, TemplateDef, Ternary, Try, Tuple,
     Type, TypeDecl, TypeList, UnaryOp, Use, UseDef, VariableAccess, VariableDecl,
     Version, Visitor, While]
-import rock/middle/tinker/[Resolver, Response, Trail, Tinkerer]
 
 import [TargetMap, TargetNode]
 
@@ -25,14 +24,31 @@ TargetCollectionResult: class {
     // These are nodes that are referencing declaration nodes, such as FunctionCall, VariableAccess etc.
     //
     referencingNodes: List<TargetNode>
+    //
+    // These are nodes that does not belong to a type.
+    //
+    globalNodes: List<TargetNode>
     init: func {
         declarationNodes = ArrayList<TargetNode> new(256)
         referencingNodes = ArrayList<TargetNode> new(1024)
+        globalNodes = ArrayList<TargetNode> new(256)
     }
     addDeclarationNode: func (node: TargetNode) { declarationNodes add(node) }
     addReferencingNode: func (node: TargetNode) { referencingNodes add(node) }
+    addGlobalNode: func (node: TargetNode) { globalNodes add(node) }
     getDeclarationNodes: func -> List<TargetNode> { declarationNodes }
     getReferencingNodes: func -> List<TargetNode> { referencingNodes }
+    getGlobalNodes: func -> List<TargetNode> { globalNodes }
+    nodeExists?: func (list: List<TargetNode>, astNode: Node) -> Bool {
+        result := false
+        for (node in list) {
+            if (node getAstNode() == astNode) {
+                result = true
+                break
+            }
+        }
+        result
+    }
 }
 
 TargetCollector: class extends Visitor {
@@ -84,6 +100,18 @@ TargetCollector: class extends Visitor {
             }
         }
     }
+    checkFromClosureNode: func (node: Node) {
+        nodeName := match (node) {
+            case functionDecl: FunctionDecl => functionDecl getName()
+            case coverDecl: CoverDecl => coverDecl getName()
+        }
+        if (mapEntry := targetMap get(node token module simpleName)) {
+            newUnderName := mapEntry getNewName()
+            moduleUnderName := node token module getUnderName()
+            suffix := nodeName substring("__%s_%s" format(moduleUnderName, moduleUnderName) size)
+            collectionResult addGlobalNode(TargetNode new(node, null, "__%s_%s%s" format(newUnderName, newUnderName, suffix)))
+        }
+    }
     isPropertyFunction: func (functionDecl: FunctionDecl) -> Bool {
         (functionDecl getName() startsWith?("__get") || functionDecl getName() startsWith?("__set")) && functionDecl getName() endsWith?("__")
     }
@@ -104,8 +132,14 @@ TargetCollector: class extends Visitor {
             acceptIfNotNull(funcType)
         }
         acceptIfNotNull(node body)
+        if (mapEntry := targetMap get(node simpleName)) {
+            collectionResult addDeclarationNode(TargetNode new(node, null, mapEntry getNewName()))
+        }
     }
     visitTypeDeclaration: func (node: TypeDecl) {
+        acceptIfNotNull(node getType())
+        acceptIfNotNull(node getInstanceType())
+        acceptIfNotNull(node getSuperType())
         for (variableDecl in node getVariables()) {
             acceptIfNotNull(variableDecl)
         }
@@ -114,6 +148,9 @@ TargetCollector: class extends Visitor {
         }
         for (functionDecl in node getFunctions()) {
             acceptIfNotNull(functionDecl)
+        }
+        for (addon in node getAddons()) {
+            acceptIfNotNull(addon)
         }
         if (!node isMeta) {
             if (mapEntry := targetMap get(node getName())) {
@@ -129,6 +166,9 @@ TargetCollector: class extends Visitor {
     }
     visitCoverDecl: func (node: CoverDecl) {
         visitTypeDeclaration(node)
+        if (node fromClosure) {
+            checkFromClosureNode(node)
+        }
     }
     visitEnumDecl: func (node: EnumDecl) {
         checkEnumVariables(node, node getMeta(), node valuesCoverDecl)
@@ -142,13 +182,21 @@ TargetCollector: class extends Visitor {
                 obfuscatedNode := node clone(newName)
                 obfuscatedNode body = node getBody()
                 visitFunctionDecl~noKeySearch(obfuscatedNode)
-                //obfuscatedNode resolve(trail, resolver)
                 collectionResult addDeclarationNode(TargetNode new(node, obfuscatedNode))
+            }
+        } else {
+            if (node oDecl) {
+                collectionResult addGlobalNode(TargetNode new(node oDecl, null))
+            } else {
+                if (node fromClosure) {
+                    checkFromClosureNode(node)
+                }
             }
         }
         visitFunctionDecl~noKeySearch(node)
     }
     visitFunctionDecl: func ~noKeySearch (node: FunctionDecl) {
+        acceptIfNotNull(node getReturnType())
         for (variableDecl in node getArguments()) {
             acceptIfNotNull(variableDecl)
         }
@@ -159,18 +207,49 @@ TargetCollector: class extends Visitor {
     }
     visitVariableDecl: func (node: VariableDecl) {
         acceptIfNotNull(node getExpr())
+        acceptIfNotNull(node getType())
         acceptIfNotNull(node fDecl)
         if (searchKey := getSearchKey~variableDecl(node)) {
             if (mapEntry := targetMap get(searchKey)) {
                 collectionResult addDeclarationNode(TargetNode new(node, null, mapEntry getNewName()))
             }
         }
+        if (node isGenerated) {
+            moduleName := node token module simpleName
+            if (mapEntry := targetMap get(moduleName)) {
+                suffix := node getName() substring("__#{node token module getUnderName()}" size)
+                collectionResult addGlobalNode(TargetNode new(node, null, "__#{mapEntry getNewName()}_#{suffix}"))
+            }
+        }
     }
     visitType: func (node: Type) {
-        //
+        targetNode := match (node) {
+            case baseType: BaseType => baseType
+            case sugarType: SugarType =>
+                acceptIfNotNull(sugarType inner)
+                if (sugarType instanceOf?(ArrayType)) {
+                    acceptIfNotNull((sugarType as ArrayType) expr)
+                }
+                sugarType inner
+            case funcType: FuncType =>
+                for (argType in funcType argTypes) {
+                    acceptIfNotNull(argType)
+                }
+                if (funcType getTypeArgs()) {
+                    for (typeArg in funcType getTypeArgs()) {
+                        acceptIfNotNull(typeArg)
+                    }
+                }
+                funcType
+        }
+        if (targetNode && !node void? && (mapEntry := targetMap get(node getName()))) {
+            if (!collectionResult nodeExists?(collectionResult getDeclarationNodes(), targetNode)) {
+                collectionResult addDeclarationNode(TargetNode new(targetNode, null, mapEntry getNewName()))
+            }
+        }
     }
     visitTypeAccess: func (node: TypeAccess) {
-        //
+        acceptIfNotNull(node inner)
     }
     visitIf: func (node: If) {
         acceptIfNotNull(node condition)
@@ -206,11 +285,13 @@ TargetCollector: class extends Visitor {
         acceptIfNotNull(node upper)
     }
     visitArrayLiteral: func (node: ArrayLiteral) {
+        acceptIfNotNull(node getType())
         for (expression in node getElements()) {
             acceptIfNotNull(expression)
         }
     }
     visitStructLiteral: func (node: StructLiteral) {
+        acceptIfNotNull(node getType())
         for (expression in node getElements()) {
             acceptIfNotNull(expression)
         }
@@ -219,6 +300,7 @@ TargetCollector: class extends Visitor {
         visitVariableAccess(node, false)
     }
     visitVariableAccess: func ~refAddr (node: VariableAccess, writeRefAddrOf: Bool) {
+        acceptIfNotNull(node getType())
         acceptIfNotNull(node expr)
     }
     visitArrayAccess: func (node: ArrayAccess) {
@@ -242,6 +324,7 @@ TargetCollector: class extends Visitor {
                 acceptIfNotNull(expression)
             }
         }
+        acceptIfNotNull(node getType())
         acceptIfNotNull(node getExpr())
         if (searchKey := getSearchKey(node getRef())) {
             if (mapEntry := targetMap get(searchKey)) {
@@ -302,6 +385,7 @@ TargetCollector: class extends Visitor {
         }
     }
     visitTuple: func (node: Tuple) {
+        acceptIfNotNull(node getType())
         for (expression in node getElements()) {
             acceptIfNotNull(expression)
         }
