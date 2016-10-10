@@ -212,6 +212,11 @@ ADVANCED OPTIONS
 --allow-super-when-shadowing
     Allows you to call super() in a shadowed function. This is prohibited by default.
 
+--no-auto-generated-enum-functions
+    Prevents rock from auto-generating count() and values() functions on enums.
+      count()   returns the number of enum elements.
+      values()  returns an array of all enum elements.
+
 "
         )
     }
