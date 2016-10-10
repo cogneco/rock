@@ -176,13 +176,22 @@ TargetCollector: class extends Visitor {
     }
     visitFunctionDecl: func (node: FunctionDecl) {
         if (node isMember() && !node getOwner() isMeta) {
-            searchKey := getSearchKey~functionDecl(node)
-            if (searchKey && (mapEntry := targetMap get(searchKey))) {
-                newName := isPropertyFunction(node) ? "#{node getName()[0..5]}#{mapEntry getNewName()}__" : mapEntry getNewName()
-                obfuscatedNode := node clone(newName)
-                obfuscatedNode body = node getBody()
-                visitFunctionDecl~noKeySearch(obfuscatedNode)
-                collectionResult addDeclarationNode(TargetNode new(node, obfuscatedNode))
+            if (searchKey := getSearchKey~functionDecl(node)) {
+                newName: String
+                newSuffix: String
+                mapEntryWithSuffix := targetMap get("#{searchKey}~#{node getSuffix()}")
+                if (mapEntryWithSuffix) {
+                    newName = mapEntryWithSuffix getNewName()
+                    newSuffix = mapEntryWithSuffix getNewSuffix()
+                } else if (mapEntry := targetMap get(searchKey)) {
+                    newName = isPropertyFunction(node) ? "#{node getName()[0..5]}#{mapEntry getNewName()}__" : mapEntry getNewName()
+                }
+                if (newName) {
+                    obfuscatedNode := node clone(newName)
+                    obfuscatedNode body = node getBody()
+                    visitFunctionDecl~noKeySearch(obfuscatedNode)
+                    collectionResult addDeclarationNode(TargetNode new(node, obfuscatedNode, newSuffix))
+                }
             }
         } else {
             if (node oDecl) {
@@ -326,8 +335,8 @@ TargetCollector: class extends Visitor {
         }
         acceptIfNotNull(node getType())
         acceptIfNotNull(node getExpr())
-        if (searchKey := getSearchKey(node getRef())) {
-            if (mapEntry := targetMap get(searchKey)) {
+        if (searchKey := getSearchKey~functionDecl(node getRef())) {
+            if (targetMap get("#{searchKey}~#{node getRef() getSuffix()}") || targetMap get(searchKey)) {
                 collectionResult addReferencingNode(TargetNode new(node, node getRef()))
             }
         }
