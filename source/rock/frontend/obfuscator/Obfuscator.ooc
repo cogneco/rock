@@ -44,6 +44,9 @@ Obfuscator: class {
                     This obfuscateTypeDeclaration(enumDeclaration, node)
                 case functionDeclaration: FunctionDecl =>
                     obfuscatedFunctionDeclaration := node getObfuscatedNode() as FunctionDecl
+                    if (obfuscatedSuffix := node getAuxiliaryData() as String) {
+                        obfuscatedFunctionDeclaration setSuffix(obfuscatedSuffix)
+                    }
                     owner := functionDeclaration isAbstract() ? functionDeclaration getOwner() : functionDeclaration getOwner() getMeta()
                     owner removeFunction(functionDeclaration)
                     owner addFunction(obfuscatedFunctionDeclaration)
