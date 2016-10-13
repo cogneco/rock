@@ -348,6 +348,7 @@ TargetCollector: class extends Visitor {
     }
     visitArrayCreation: func (node: ArrayCreation) {
         acceptIfNotNull(node expr)
+        acceptIfNotNull(node getType())
     }
     visitBinaryOp: func (node: BinaryOp) {
         acceptIfNotNull(node getLeft())
