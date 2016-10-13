@@ -38,8 +38,18 @@ TargetMap: class extends HashMap<String, TargetMapEntry> {
                 if (entryPair[0] contains?('.')) {
                     oldNameSuffixPair := entryPair[0] split('~')
                     newNameSuffixPair := entryPair[1] split('~')
+                    oldTypeMemberPair := oldNameSuffixPair[0] split('.')
                     oldSuffix := oldNameSuffixPair size > 1 ? oldNameSuffixPair[1] : null
                     newSuffix := newNameSuffixPair size > 1 ? newNameSuffixPair[1] : null
+                    if (oldTypeMemberPair[1] == "init") {
+                        constructorEntry: String
+                        if (oldSuffix) {
+                            constructorEntry = "%s.new~%s" format(oldTypeMemberPair[0], oldSuffix)
+                        } else {
+                            constructorEntry = "%s.new" format(oldTypeMemberPair[0])
+                        }
+                        result put(constructorEntry, TargetMapEntry new("#{oldTypeMemberPair[0]}.new", "__#{newNameSuffixPair[0]}", oldSuffix, newSuffix))
+                    }
                     result put(entryPair[0], TargetMapEntry new(oldNameSuffixPair[0], newNameSuffixPair[0], oldSuffix, newSuffix))
                 } else {
                     result put(entryPair[0], TargetMapEntry new(entryPair[0], entryPair[1], null, null))
