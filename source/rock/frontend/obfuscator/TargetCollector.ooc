@@ -174,8 +174,14 @@ TargetCollector: class extends Visitor {
         checkEnumVariables(node, node getMeta(), node valuesCoverDecl)
         visitTypeDeclaration(node)
     }
+    cloneAndRestoreFunctionDecl: func (node: FunctionDecl, newName: String) -> FunctionDecl {
+        obfuscatedNode := node clone(newName)
+        obfuscatedNode args = node getArguments()
+        obfuscatedNode body = node getBody()
+        obfuscatedNode
+    }
     visitFunctionDecl: func (node: FunctionDecl) {
-        if (!collectionResult nodeExists?(collectionResult getDeclarationNodes(), node) && node isMember() && !node getOwner() isMeta) {
+        if (node isMember() && !node getOwner() isMeta && !collectionResult nodeExists?(collectionResult getDeclarationNodes(), node)) {
             if (searchKey := getSearchKey~functionDecl(node)) {
                 newName: String
                 newSuffix: String
@@ -187,8 +193,7 @@ TargetCollector: class extends Visitor {
                     newName = isPropertyFunction(node) ? "#{node getName()[0..5]}#{mapEntry getNewName()}__" : mapEntry getNewName()
                 }
                 if (newName) {
-                    obfuscatedNode := node clone(newName)
-                    obfuscatedNode body = node getBody()
+                    obfuscatedNode := cloneAndRestoreFunctionDecl(node, newName)
                     visitFunctionDecl~noKeySearch(obfuscatedNode)
                     collectionResult addDeclarationNode(TargetNode new(node, obfuscatedNode, newSuffix))
                 }
