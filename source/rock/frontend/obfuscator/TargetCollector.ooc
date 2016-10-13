@@ -191,7 +191,7 @@ TargetCollector: class extends Visitor {
         visitTypeDeclaration(node)
     }
     visitFunctionDecl: func (node: FunctionDecl) {
-        if (node isMember() && !node getOwner() isMeta && !collectionResult nodeExists?(collectionResult getDeclarationNodes(), node)) {
+        if (!collectionResult nodeExists?(collectionResult getDeclarationNodes(), node) && node isMember() && !node getOwner() isMeta) {
             if (searchKey := getSearchKey~functionDecl(node)) {
                 newName: String
                 newSuffix: String
