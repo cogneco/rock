@@ -115,6 +115,15 @@ TargetCollector: class extends Visitor {
     isPropertyFunction: func (functionDecl: FunctionDecl) -> Bool {
         (functionDecl getName() startsWith?("__get") || functionDecl getName() startsWith?("__set")) && functionDecl getName() endsWith?("__")
     }
+    cloneAndRestoreFunctionDecl: func (node: FunctionDecl, newName: String) -> FunctionDecl {
+        obfuscatedNode := node clone(newName)
+        obfuscatedNode args = node getArguments()
+        obfuscatedNode body = node getBody()
+        obfuscatedNode returnType = node getReturnType()
+        obfuscatedNode typeArgs = node getTypeArgs()
+        obfuscatedNode returnArgs = node getReturnArgs()
+        obfuscatedNode
+    }
     visitModule: func (node: Module) {
         for (typeDecl in node getTypes()) {
             acceptIfNotNull(typeDecl)
@@ -173,12 +182,6 @@ TargetCollector: class extends Visitor {
     visitEnumDecl: func (node: EnumDecl) {
         checkEnumVariables(node, node getMeta(), node valuesCoverDecl)
         visitTypeDeclaration(node)
-    }
-    cloneAndRestoreFunctionDecl: func (node: FunctionDecl, newName: String) -> FunctionDecl {
-        obfuscatedNode := node clone(newName)
-        obfuscatedNode args = node getArguments()
-        obfuscatedNode body = node getBody()
-        obfuscatedNode
     }
     visitFunctionDecl: func (node: FunctionDecl) {
         if (node isMember() && !node getOwner() isMeta && !collectionResult nodeExists?(collectionResult getDeclarationNodes(), node)) {
