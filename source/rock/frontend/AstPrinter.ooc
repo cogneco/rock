@@ -189,6 +189,7 @@ AstPrinter: class extends Visitor {
     }
     printFunctionDeclProperties: func (node: FunctionDecl) {
         writer nl() . writePadded("Member function", "%s", node isMember() toString())
+        writer nl() . writePadded("Generated", "%s", node isGenerated toString())
         if (node isMember()) {
             modifiers := ArrayList<String> new(5)
             // Since 'foo: static virtual final override func' actually compiles...
