@@ -124,6 +124,13 @@ TargetCollector: class extends Visitor {
         obfuscatedNode returnArgs = node getReturnArgs()
         obfuscatedNode
     }
+    checkReference: func (referencingNode: Node, reference: FunctionDecl) {
+        if (searchKey := getSearchKey~functionDecl(reference)) {
+            if (targetMap get("#{searchKey}~#{reference getSuffix()}") || targetMap get(searchKey)) {
+                collectionResult addReferencingNode(TargetNode new(referencingNode, reference))
+            }
+        }
+    }
     visitModule: func (node: Module) {
         for (typeDecl in node getTypes()) {
             acceptIfNotNull(typeDecl)
@@ -319,9 +326,13 @@ TargetCollector: class extends Visitor {
     visitVariableAccess: func ~refAddr (node: VariableAccess, writeRefAddrOf: Bool) {
         acceptIfNotNull(node getType())
         acceptIfNotNull(node expr)
+        if (node getRef() && node getRef() instanceOf?(FunctionDecl)) {
+            checkReference(node, node getRef() as FunctionDecl)
+        }
     }
     visitArrayAccess: func (node: ArrayAccess) {
         acceptIfNotNull(node getArray())
+        acceptIfNotNull(node getType())
         for (expression in node indices) {
             acceptIfNotNull(expression)
         }
@@ -343,14 +354,11 @@ TargetCollector: class extends Visitor {
         }
         acceptIfNotNull(node getType())
         acceptIfNotNull(node getExpr())
-        if (searchKey := getSearchKey~functionDecl(node getRef())) {
-            if (targetMap get("#{searchKey}~#{node getRef() getSuffix()}") || targetMap get(searchKey)) {
-                collectionResult addReferencingNode(TargetNode new(node, node getRef()))
-            }
-        }
+        checkReference(node, node getRef())
     }
     visitArrayCreation: func (node: ArrayCreation) {
         acceptIfNotNull(node expr)
+        acceptIfNotNull(node arrayType)
         acceptIfNotNull(node getType())
     }
     visitBinaryOp: func (node: BinaryOp) {
