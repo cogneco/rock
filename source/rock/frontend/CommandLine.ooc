@@ -723,13 +723,14 @@ CommandLine: class {
 
         if (params obfuscate) {
             obfuscateMs := Time measure(||
+                "Obfuscating..." println()
                 Obfuscator run(params, allModules)
                 if(!Tinkerer new(params) process(allModules)) {
                     failure(params)
                 }
             )
             if (params timing) {
-                "Obfuscation took %d ms" printfln(obfuscateMs)
+                "Obfuscation and reresolving took %d ms" printfln(obfuscateMs)
             }
         }
 
