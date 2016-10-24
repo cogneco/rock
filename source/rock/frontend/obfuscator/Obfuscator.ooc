@@ -82,6 +82,13 @@ Obfuscator: class {
                         functionCall setName(functionCall getName() == "super" ? "super" : newRef getName())
                         functionCall setSuffix(newRef getSuffix())
                     }
+                case variableAccess: VariableAccess =>
+                    targetNode := This findReference(node getObfuscatedNode())
+                    if (targetNode) {
+                        newRef := targetNode getObfuscatedNode() as FunctionDecl
+                        variableAccess setRef(newRef)
+                        variableAccess name = newRef getName()
+                    }
                 case =>
                     printErrorAndTerminate("No update method for node type '%s'" format(node getAstNode() class name))
             }

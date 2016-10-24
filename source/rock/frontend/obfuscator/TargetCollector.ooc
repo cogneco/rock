@@ -115,6 +115,22 @@ TargetCollector: class extends Visitor {
     isPropertyFunction: func (functionDecl: FunctionDecl) -> Bool {
         (functionDecl getName() startsWith?("__get") || functionDecl getName() startsWith?("__set")) && functionDecl getName() endsWith?("__")
     }
+    cloneAndRestoreFunctionDecl: func (node: FunctionDecl, newName: String) -> FunctionDecl {
+        obfuscatedNode := node clone(newName)
+        obfuscatedNode args = node getArguments()
+        obfuscatedNode body = node getBody()
+        obfuscatedNode returnType = node getReturnType()
+        obfuscatedNode typeArgs = node getTypeArgs()
+        obfuscatedNode returnArgs = node getReturnArgs()
+        obfuscatedNode
+    }
+    checkReference: func (referencingNode: Node, reference: FunctionDecl) {
+        if (searchKey := getSearchKey~functionDecl(reference)) {
+            if (targetMap get("#{searchKey}~#{reference getSuffix()}") || targetMap get(searchKey)) {
+                collectionResult addReferencingNode(TargetNode new(referencingNode, reference))
+            }
+        }
+    }
     visitModule: func (node: Module) {
         for (typeDecl in node getTypes()) {
             acceptIfNotNull(typeDecl)
@@ -175,7 +191,7 @@ TargetCollector: class extends Visitor {
         visitTypeDeclaration(node)
     }
     visitFunctionDecl: func (node: FunctionDecl) {
-        if (node isMember() && !node getOwner() isMeta) {
+        if (node isMember() && !node getOwner() isMeta && !collectionResult nodeExists?(collectionResult getDeclarationNodes(), node)) {
             if (searchKey := getSearchKey~functionDecl(node)) {
                 newName: String
                 newSuffix: String
@@ -187,8 +203,7 @@ TargetCollector: class extends Visitor {
                     newName = isPropertyFunction(node) ? "#{node getName()[0..5]}#{mapEntry getNewName()}__" : mapEntry getNewName()
                 }
                 if (newName) {
-                    obfuscatedNode := node clone(newName)
-                    obfuscatedNode body = node getBody()
+                    obfuscatedNode := cloneAndRestoreFunctionDecl(node, newName)
                     visitFunctionDecl~noKeySearch(obfuscatedNode)
                     collectionResult addDeclarationNode(TargetNode new(node, obfuscatedNode, newSuffix))
                 }
@@ -311,9 +326,13 @@ TargetCollector: class extends Visitor {
     visitVariableAccess: func ~refAddr (node: VariableAccess, writeRefAddrOf: Bool) {
         acceptIfNotNull(node getType())
         acceptIfNotNull(node expr)
+        if (node getRef() && node getRef() instanceOf?(FunctionDecl)) {
+            checkReference(node, node getRef() as FunctionDecl)
+        }
     }
     visitArrayAccess: func (node: ArrayAccess) {
         acceptIfNotNull(node getArray())
+        acceptIfNotNull(node getType())
         for (expression in node indices) {
             acceptIfNotNull(expression)
         }
@@ -335,14 +354,12 @@ TargetCollector: class extends Visitor {
         }
         acceptIfNotNull(node getType())
         acceptIfNotNull(node getExpr())
-        if (searchKey := getSearchKey~functionDecl(node getRef())) {
-            if (targetMap get("#{searchKey}~#{node getRef() getSuffix()}") || targetMap get(searchKey)) {
-                collectionResult addReferencingNode(TargetNode new(node, node getRef()))
-            }
-        }
+        checkReference(node, node getRef())
     }
     visitArrayCreation: func (node: ArrayCreation) {
         acceptIfNotNull(node expr)
+        acceptIfNotNull(node arrayType)
+        acceptIfNotNull(node getType())
     }
     visitBinaryOp: func (node: BinaryOp) {
         acceptIfNotNull(node getLeft())
