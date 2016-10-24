@@ -29,9 +29,9 @@ TargetCollectionResult: class {
     //
     globalNodes: List<TargetNode>
     init: func {
-        declarationNodes = ArrayList<TargetNode> new(256)
+        declarationNodes = ArrayList<TargetNode> new(1024)
         referencingNodes = ArrayList<TargetNode> new(1024)
-        globalNodes = ArrayList<TargetNode> new(256)
+        globalNodes = ArrayList<TargetNode> new(1024)
     }
     addDeclarationNode: func (node: TargetNode) { declarationNodes add(node) }
     addReferencingNode: func (node: TargetNode) { referencingNodes add(node) }
@@ -206,6 +206,10 @@ TargetCollector: class extends Visitor {
                     obfuscatedNode := cloneAndRestoreFunctionDecl(node, newName)
                     visitFunctionDecl~noKeySearch(obfuscatedNode)
                     collectionResult addDeclarationNode(TargetNode new(node, obfuscatedNode, newSuffix))
+                } else {
+                    if (node oDecl) {
+                        collectionResult addGlobalNode(TargetNode new(node oDecl, null))
+                    }
                 }
             }
         } else {
