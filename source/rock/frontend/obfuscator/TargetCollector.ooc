@@ -29,9 +29,9 @@ TargetCollectionResult: class {
     //
     globalNodes: List<TargetNode>
     init: func {
-        declarationNodes = ArrayList<TargetNode> new(256)
+        declarationNodes = ArrayList<TargetNode> new(1024)
         referencingNodes = ArrayList<TargetNode> new(1024)
-        globalNodes = ArrayList<TargetNode> new(256)
+        globalNodes = ArrayList<TargetNode> new(1024)
     }
     addDeclarationNode: func (node: TargetNode) { declarationNodes add(node) }
     addReferencingNode: func (node: TargetNode) { referencingNodes add(node) }
@@ -209,13 +209,13 @@ TargetCollector: class extends Visitor {
                 }
             }
         } else {
-            if (node oDecl) {
-                collectionResult addGlobalNode(TargetNode new(node oDecl, null))
-            } else {
-                if (node fromClosure) {
-                    checkFromClosureNode(node)
-                }
+            if (node fromClosure) {
+                checkFromClosureNode(node)
             }
+        }
+        if (node oDecl) {
+            // we must recompute the name of the operator
+            collectionResult addGlobalNode(TargetNode new(node oDecl, null))
         }
         visitFunctionDecl~noKeySearch(node)
     }
