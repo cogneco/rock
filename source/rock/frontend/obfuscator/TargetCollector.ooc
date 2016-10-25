@@ -206,20 +206,16 @@ TargetCollector: class extends Visitor {
                     obfuscatedNode := cloneAndRestoreFunctionDecl(node, newName)
                     visitFunctionDecl~noKeySearch(obfuscatedNode)
                     collectionResult addDeclarationNode(TargetNode new(node, obfuscatedNode, newSuffix))
-                } else {
-                    if (node oDecl) {
-                        collectionResult addGlobalNode(TargetNode new(node oDecl, null))
-                    }
                 }
             }
         } else {
-            if (node oDecl) {
-                collectionResult addGlobalNode(TargetNode new(node oDecl, null))
-            } else {
-                if (node fromClosure) {
-                    checkFromClosureNode(node)
-                }
+            if (node fromClosure) {
+                checkFromClosureNode(node)
             }
+        }
+        if (node oDecl) {
+            // we must recompute the name of the operator
+            collectionResult addGlobalNode(TargetNode new(node oDecl, null))
         }
         visitFunctionDecl~noKeySearch(node)
     }
