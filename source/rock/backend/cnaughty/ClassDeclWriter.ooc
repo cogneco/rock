@@ -189,7 +189,8 @@ ClassDeclWriter: abstract class extends Skeleton {
             if(decl getName() == ClassDecl LOAD_FUNC_NAME) {
 
                 // Make sure the load function is only evaluated once.
-                current app("static _Bool __done__ = false;") . nl() . app("if(!__done__)") . openBlock() . nl() . app("__done__ = true;") . nl()
+                current app("if(!#{cDecl getLoadedStateVariableName()})") . openBlock() . nl()
+                current app("#{cDecl getLoadedStateVariableName()} = true;") . nl()
 
                 superRef := cDecl getSuperRef()
                 finalScore: Int

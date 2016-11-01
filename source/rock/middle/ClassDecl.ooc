@@ -16,7 +16,7 @@ ClassDecl: class extends TypeDecl {
 
     isAbstract := false
     isFinal := false
-    
+
     shouldCheckNoArgConstructor := false
     isInitReported := false
 
@@ -112,6 +112,10 @@ ClassDecl: class extends TypeDecl {
         return fDecl
     }
 
+    getLoadedStateVariableName: func -> String {
+        "__#{getName()}_loaded__"
+    }
+
     getDefaultsFunc: func -> FunctionDecl {
         // TODO: a more elegant solution maybe?
         meat : ClassDecl = isMeta ? this : getMeta()
@@ -123,7 +127,7 @@ ClassDecl: class extends TypeDecl {
         return fDecl
     }
 
-    
+
     getBaseClass: func ~afterResolve(fDecl: FunctionDecl) -> ClassDecl {
         b: Bool
         getBaseClass(fDecl, false, b&)
@@ -136,10 +140,10 @@ ClassDecl: class extends TypeDecl {
     getBaseClass: func (fDecl: FunctionDecl, withInterfaces: Bool, comeBack: Bool*) -> ClassDecl {
         sRef := getSuperRef() as ClassDecl
         // An interface might not yet be resolved.
-        comeBack@ = false 
+        comeBack@ = false
         // first look in the supertype, if any
         if(sRef != null) {
-             
+
             base := sRef getBaseClass(fDecl, comeBack)
             if (comeBack@) { // ugly_
                 return null

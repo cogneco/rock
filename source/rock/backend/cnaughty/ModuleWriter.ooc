@@ -82,14 +82,25 @@ ModuleWriter: abstract class extends Skeleton {
             current nl(). app("#include <"). app(inc). app(">")
         }
         current nl()
-        
+
+        for (type in module getTypes()) {
+            if (type isMeta && type instanceOf?(ClassDecl)) {
+                classDecl := type as ClassDecl
+                if (classDecl lookupFunction(classDecl LOAD_FUNC_NAME)) {
+                    if(classDecl getVersion()) VersionWriter writeStart(this, classDecl getVersion())
+                    current nl() . app("static bool %s = false;" format(classDecl getLoadedStateVariableName()))
+                    if(classDecl getVersion()) VersionWriter writeEnd(this, classDecl getVersion())
+                }
+            }
+        }
+
         // write the .c part of all global variables
         for(stmt in module body) {
             if(stmt instanceOf?(VariableDecl) && !stmt as VariableDecl getType() instanceOf?(AnonymousStructType)) {
                 vd := stmt as VariableDecl
                 // TODO: add 'local'
                 if(vd isExtern() && !vd isProto()) continue
-                
+
                 current = cw
                 current nl()
                 if(vd isStatic()) current app("static ")
@@ -107,14 +118,14 @@ ModuleWriter: abstract class extends Skeleton {
             if(!tDecl isMeta) continue
             tDecl accept(this)
         }
-        
+
         // write the .h part of all global variables
         for(stmt in module body) {
             if(stmt instanceOf?(VariableDecl) && !stmt as VariableDecl getType() instanceOf?(AnonymousStructType)) {
                 vd := stmt as VariableDecl
                 // TODO: add 'local'
                 if(vd isExtern() && !vd isProto()) continue
-                
+
                 if(!vd isStatic()) {
                     current = fw
                     current nl(). app("extern ")
@@ -323,7 +334,7 @@ ModuleWriter: abstract class extends Skeleton {
         match (inc mode) {
             case IncludeMode MACRO =>
                 // muffin to do.
-            case => 
+            case =>
                 current app("<")
         }
 
@@ -336,7 +347,7 @@ ModuleWriter: abstract class extends Skeleton {
         match (inc mode) {
             case IncludeMode MACRO =>
                 // muffin to do
-            case => 
+            case =>
                 current app(".h>")
         }
 
