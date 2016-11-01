@@ -138,6 +138,39 @@ ModuleWriter: abstract class extends Skeleton {
         }
 
         // write load function
+        This writeLoadFunction(this, module)
+
+        // write all addons
+        for(addon in module addons) {
+            addon accept(this)
+        }
+
+        // write all functions
+        for(fDecl in module functions) {
+            fDecl accept(this)
+        }
+
+        // write all operator overloads
+        for(oDecl in module operators) {
+            oDecl accept(this)
+        }
+
+        // header end
+        current = hw
+        current nl(). nl(). app("#endif // "). app(hName)
+
+        // forward-header end
+        current = fw
+        current nl(). nl(). app("#endif // "). app(hFwdName)
+
+        // Write a default main if none provided in source
+        if(module main && !module functions contains?("main")) {
+            writeDefaultMain(this)
+        }
+
+    }
+
+    writeLoadFunction: static func (this: Skeleton, module: Module) {
         current = fw
         current nl(). app("void "). app(module getLoadFuncName()). app("();")
         current = cw
@@ -189,35 +222,6 @@ ModuleWriter: abstract class extends Skeleton {
         }
         current untab(). nl(). app("}")
         current untab(). nl(). app("}"). nl()
-
-        // write all addons
-        for(addon in module addons) {
-            addon accept(this)
-        }
-
-        // write all functions
-        for(fDecl in module functions) {
-            fDecl accept(this)
-        }
-
-        // write all operator overloads
-        for(oDecl in module operators) {
-            oDecl accept(this)
-        }
-
-        // header end
-        current = hw
-        current nl(). nl(). app("#endif // "). app(hName)
-
-        // forward-header end
-        current = fw
-        current nl(). nl(). app("#endif // "). app(hFwdName)
-
-        // Write a default main if none provided in source
-        if(module main && !module functions contains?("main")) {
-            writeDefaultMain(this)
-        }
-
     }
 
     /** Write default main function */
