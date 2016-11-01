@@ -77,6 +77,7 @@ Module: class extends Node {
         null
     }
 
+    getLoadedStateVariableName: func -> String { "__#{getUnderName()}_loaded__" }
     getLoadFuncName: func -> String { getUnderName() + "_load" }
     getFullName:     func -> String { fullName }
     getUnderName:    func -> String { underName }

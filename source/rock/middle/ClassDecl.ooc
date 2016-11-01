@@ -11,6 +11,7 @@ ClassDecl: class extends TypeDecl {
 
     DESTROY_FUNC_NAME   := static const "__destroy__"
     LOAD_FUNC_NAME      := static const "__load__"
+    UNLOAD_FUNC_NAME    := static const "__unload__"
     DEFAULTS_FUNC_NAME  := static const "__defaults__"
     COVER_DEFAULTS_FUNC_NAME  := static const "__cover_defaults__"
 
