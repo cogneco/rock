@@ -205,6 +205,20 @@ ClassDeclWriter: abstract class extends Skeleton {
                 }
 
                 current closeBlock()
+            } else if (decl getName() == ClassDecl UNLOAD_FUNC_NAME) {
+                current app("if(#{cDecl getLoadedStateVariableName()})") . openBlock() . nl()
+                current app("#{cDecl getLoadedStateVariableName()} = false;") . nl()
+                superRef := cDecl getSuperRef()
+                finalScore: Int
+                superLoad := superRef getFunction(ClassDecl UNLOAD_FUNC_NAME, null, null, finalScore&)
+                if(superLoad) {
+                    FunctionDeclWriter writeFullName(this, superLoad)
+                    current app("();")
+                }
+                //
+                // unload stuff here
+                //
+                current closeBlock()
             }
 
             for(stat in decl body) {

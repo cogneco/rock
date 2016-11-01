@@ -70,10 +70,16 @@ ClassDecl: class extends TypeDecl {
             }
 
             if(isClass || isCover) {
+                addGeneratedStaticFunction := func (name: String) {
+                    fn := FunctionDecl new(name, token)
+                    fn setStatic(true)
+                    addFunction(fn)
+                }
                 if(!functions contains?(This LOAD_FUNC_NAME)) {
-                    fDecl := FunctionDecl new(This LOAD_FUNC_NAME, token)
-                    fDecl setStatic(true)
-                    addFunction(fDecl)
+                    addGeneratedStaticFunction(This LOAD_FUNC_NAME)
+                }
+                if (!functions contains?(This UNLOAD_FUNC_NAME)) {
+                    addGeneratedStaticFunction(This UNLOAD_FUNC_NAME)
                 }
 
                 for (f in functions) {
