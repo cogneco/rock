@@ -4,7 +4,7 @@ Summary:
   - rock now handles rvalue references when dealing with cover properties
   - Calling super() in a shadowed function now generates an error by default (use `--allow-super-when-shadowing` to disable this error)
   - The C generator now outputs `_this` instead of `this`
-  - rock now auto-generates count() and values() functions for enums.
+  - rock now auto-generates count() and values() functions for enums (use `--no-auto-generated-enum-functions` to disable)
   - Improved the obfuscator
   - Added an AST printer, see `rock --help` on how to use it.
   - You can now call methods that take arguments on tuples
