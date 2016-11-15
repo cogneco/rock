@@ -22,8 +22,6 @@ import rock/backend/cnaughty/CGenerator
 
 AndroidDriver: class extends Driver {
 
-	sourceFolders := HashMap<String, SourceFolder> new()
-
 	init: func (.params) {
 		super(params)
 	}
@@ -296,7 +294,7 @@ AndroidDriver: class extends Driver {
 		}
 		sourceFoldersDone
 	}
-	
+
 	doublePrefix: func -> Bool {
 			true
 	}
