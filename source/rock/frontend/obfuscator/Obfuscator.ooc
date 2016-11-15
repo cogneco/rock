@@ -26,9 +26,7 @@ Obfuscator: class {
         for (node in This declarationNodes) {
             match (node getAstNode()) {
                 case module: Module =>
-                    newName := node getAuxiliaryData() as String
-                    module simpleName = newName
-                    module underName = "#{newName}_"
+                    module resetNames(node getAuxiliaryData() as String)
                     module isObfuscated = true
                 case classDeclaration: ClassDecl =>
                     This obfuscateTypeDeclaration(classDeclaration, node)

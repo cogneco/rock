@@ -74,6 +74,19 @@ Module: class extends Node {
         dead = false
     }
 
+    // NOTE: This does not recompute the paths!
+    resetNames: func (newName: String) {
+        //newFullName: String
+        idx := fullName lastIndexOf('/')
+        simpleName = newName clone()
+        if (idx > -1) {
+            fullName = fullName substring(0, idx + 1) append(newName)
+        } else {
+            fullName = newName clone()
+        }
+        underName = sanitize(fullName)
+    }
+
     clone: func -> This {
         raise(This, "Can't clone Module")
         null
@@ -99,11 +112,10 @@ Module: class extends Node {
     }
 
     getPath: func (suffix := "") -> String {
-        // TODO: This is highly ineffecient
-        if (isObfuscated)
-            path = path contains?(File separator) ? path substring(0, path lastIndexOf(File separator) + 1) + simpleName : simpleName
+        // TODO: This is hack to fix an issue with source paths when using the obfuscator
+        modPath := isObfuscated ? (path contains?(File separator) ? path substring(0, path lastIndexOf(File separator) + 1) + simpleName : simpleName) : path
         base := getSourceFolderName()
-        File new(base, path) path + suffix
+        File new(base, modPath) path + suffix
     }
 
     getLocalPath: func (suffix := "") -> String {
