@@ -187,9 +187,9 @@ ClassDeclWriter: abstract class extends Skeleton {
             current app(' '). openBlock(). nl()
 
             if(decl getName() == ClassDecl LOAD_FUNC_NAME) {
-
                 // Make sure the load function is only evaluated once.
-                current app("static _Bool __done__ = false;") . nl() . app("if(!__done__)") . openBlock() . nl() . app("__done__ = true;") . nl()
+                current app("if(!#{cDecl getLoadedStateVariableName()})") . openBlock() . nl()
+                current app("#{cDecl getLoadedStateVariableName()} = true;") . nl()
 
                 superRef := cDecl getSuperRef()
                 finalScore: Int
@@ -203,6 +203,20 @@ ClassDeclWriter: abstract class extends Skeleton {
                     current nl(). app(cDecl getNonMeta() underName()). app("_class()->"). app(vDecl getName()). app(" = "). app(vDecl getExpr()). app(';')
                 }
 
+                current closeBlock()
+            } else if (decl getName() == ClassDecl UNLOAD_FUNC_NAME) {
+                current app("if(#{cDecl getLoadedStateVariableName()})") . openBlock() . nl()
+                current app("#{cDecl getLoadedStateVariableName()} = false;") . nl()
+                superRef := cDecl getSuperRef()
+                finalScore: Int
+                superLoad := superRef getFunction(ClassDecl UNLOAD_FUNC_NAME, null, null, finalScore&)
+                if(superLoad) {
+                    FunctionDeclWriter writeFullName(this, superLoad)
+                    current app("();")
+                }
+                /*for (vDecl in cDecl variables) {
+                    if (vDecl getExpr() == null) continue
+                }*/
                 current closeBlock()
             }
 
@@ -357,17 +371,16 @@ ClassDeclWriter: abstract class extends Skeleton {
 
         current nl(). nl(). app(underName). app(" *"). app(cDecl getNonMeta() getFullName()). app("_class()"). openBlock(). nl()
 
-        if (cDecl getNonMeta() getSuperRef()) {
-            current app("static _Bool __done__ = false;"). nl()
-        }
         current app("static "). app(underName). app(" class = "). nl()
 
         writeClassStructInitializers(this, realDecl, cDecl, ArrayList<FunctionDecl> new(), true)
 
         current app(';')
+        current nl(). app("static bool __done__ = false;")
+        current nl(). app("if(!__done__)"). openBlock()
+        current nl(). app("__done__ = true;")
         if (cDecl getNonMeta() getSuperRef()) {
             current nl(). app(This CLASS_NAME). app(" *classPtr = ("). app(This CLASS_NAME). app(" *) &class;")
-            current nl(). app("if(!__done__)"). openBlock()
             match (cDecl getNonMeta()) {
                 case cd: CoverDecl =>
                     // covers don't have super classes, silly.
@@ -375,13 +388,11 @@ ClassDeclWriter: abstract class extends Skeleton {
                 case =>
                     current nl(). app("classPtr->super = ("). app(This CLASS_NAME). app("*) "). app(cDecl getNonMeta() getSuperRef() getFullName()). app("_class();")
             }
-            current nl(). app("__done__ = true;").
-                    nl(). app("classPtr->name = ")
+            current nl(). app("classPtr->name = ")
             writeStringLiteral(realDecl getNonMeta() name)
-            current app(";").
-                    closeBlock()
+            current app(";")
         }
-
+        current closeBlock()
         current nl(). app("return &class;"). closeBlock()
     }
 

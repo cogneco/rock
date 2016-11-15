@@ -11,6 +11,12 @@ import Return, ClassDecl, CoverDecl, FunctionDecl, VariableDecl, Type,
 
 Visitor: abstract class {
 
+    acceptIfNotNull: func (node: Node) {
+        if (node) {
+            node accept(this)
+        }
+    }
+
     visitInterfaceDecl:     func (node: InterfaceDecl) {}
     visitClassDecl:         func (node: ClassDecl) {}
     visitCoverDecl:         func (node: CoverDecl) {}

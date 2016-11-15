@@ -17,6 +17,7 @@ import SourceFolder
 Driver: abstract class {
 
     params: BuildParams
+    sourceFolders: HashMap<String, SourceFolder>
 
     init: func(=params) {}
 
@@ -43,9 +44,9 @@ Driver: abstract class {
 
                     destDir := File new(base, module getSourceFolderName())
 
-                    src  := File new(pathElement, inc path + ".h") 
+                    src  := File new(pathElement, inc path + ".h")
                     dest := File new(destDir,     inc path + ".h")
-                    
+
                     if (params verboser) {
                         "Copying %s to %s" printfln(src path, dest path)
                     }
@@ -67,7 +68,7 @@ Driver: abstract class {
             usedefCollection add(uze useDef)
             walkUseDef(uze useDef, usedefCollection)
         }
-        
+
         for(useDef: UseDef in usedefCollection) {
             if (usesDone contains?(useDef)) {
                 continue
@@ -157,7 +158,7 @@ Driver: abstract class {
             return usesDone
         }
         modulesDone add(module)
-        
+
         for (uze in module getUses()) {
             useDef := uze useDef
             if (!usesDone contains?(useDef)) {
