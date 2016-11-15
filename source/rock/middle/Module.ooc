@@ -1,6 +1,7 @@
 import io/File, text/EscapeSequence
 import structs/[HashMap, ArrayList, List, MultiMap]
 import ../frontend/[Token, BuildParams, PathList, AstBuilder]
+import ../frontend/drivers/[Driver, SourceFolder]
 import ../utils/FileUtils
 import Node, FunctionDecl, Visitor, Import, Include, Use, UseDef, TypeDecl,
        FunctionCall, Type, Declaration, VariableAccess, OperatorDecl,
@@ -8,7 +9,8 @@ import Node, FunctionDecl, Visitor, Import, Include, Use, UseDef, TypeDecl,
 import tinker/[Response, Resolver, Trail, Errors]
 
 Module: class extends Node {
-
+    RUNTIME_UNLOAD_NAME := static const "__runtime_unload__"
+    RUNTIME_RELOAD_NAME := static const "__runtime_reload__"
     // statistics house-keeping
     timesImported := 0
     timesLooped := 0
@@ -79,6 +81,7 @@ Module: class extends Node {
 
     getLoadedStateVariableName: func -> String { "__#{getUnderName()}_loaded__" }
     getLoadFuncName: func -> String { getUnderName() + "_load" }
+    getUnloadFuncName: func -> String { "#{getUnderName()}_unload" }
     getFullName:     func -> String { fullName }
     getUnderName:    func -> String { underName }
     getPathElement:  func -> String { pathElement }

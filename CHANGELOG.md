@@ -8,6 +8,7 @@ Summary:
   - Improved the obfuscator
   - Added an AST printer, see `rock --help` on how to use it.
   - You can now call methods that take arguments on tuples
+  - rock now generates an unload function for each module and class (reserved for future use, do not use)
 
 ## 1.0.21 (2016-08-29)
   - Obfuscator hotfix

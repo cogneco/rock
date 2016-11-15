@@ -1,8 +1,9 @@
-import structs/List
+import structs/[List, ArrayList]
 import ../../middle/[Module, Include, Import, TypeDecl, FunctionDecl,
        CoverDecl, ClassDecl, EnumDecl, OperatorDecl, InterfaceDecl,
        VariableDecl, Type, FuncType, Argument, StructLiteral]
 import ../../frontend/BuildParams
+import ../../frontend/drivers/[Driver, SourceFolder]
 import CoverDeclWriter, ClassDeclWriter, EnumDeclWriter, VersionWriter, Skeleton
 
 ModuleWriter: abstract class extends Skeleton {
@@ -81,16 +82,17 @@ ModuleWriter: abstract class extends Skeleton {
             inc := imp getModule() getPath(".h")
             current nl(). app("#include <"). app(inc). app(">")
         }
+
         current nl()
 
-        current nl(). app("static bool "). app(module getLoadedStateVariableName()). app(" = false;")
+        current nl(). app("static volatile bool "). app(module getLoadedStateVariableName()). app(" = false;")
 
         for (type in module getTypes()) {
             if (type isMeta && type instanceOf?(ClassDecl)) {
                 classDecl := type as ClassDecl
                 if (classDecl lookupFunction(classDecl LOAD_FUNC_NAME)) {
                     if(classDecl getVersion()) VersionWriter writeStart(this, classDecl getVersion())
-                    current nl() . app("static bool %s = false;" format(classDecl getLoadedStateVariableName()))
+                    current nl(). app("static volatile bool #{classDecl getLoadedStateVariableName()} = false;")
                     if(classDecl getVersion()) VersionWriter writeEnd(this, classDecl getVersion())
                 }
             }
@@ -139,6 +141,7 @@ ModuleWriter: abstract class extends Skeleton {
 
         // write load function
         This writeLoadFunction(this, module)
+        This writeUnloadFunction(this, module)
 
         // write all addons
         for(addon in module addons) {
@@ -175,8 +178,8 @@ ModuleWriter: abstract class extends Skeleton {
         current nl(). app("void "). app(module getLoadFuncName()). app("();")
         current = cw
         current nl(). app("void "). app(module getLoadFuncName()). app("() {"). tab()
-        current nl() . app ("if(!#{module getLoadedStateVariableName()}) {") . nl() . tab()
-        current app ("#{module getLoadedStateVariableName()} = true;")
+        current nl(). app ("if(!#{module getLoadedStateVariableName()}) {") . tab()
+        current nl(). app ("#{module getLoadedStateVariableName()} = true;")
         for (imp in module getAllImports()) {
             current nl(). app(imp getModule() getLoadFuncName()). app("();")
         }
@@ -184,7 +187,6 @@ ModuleWriter: abstract class extends Skeleton {
         writeVDecl := func (decl: VariableDecl) {
             current nl() . app(decl getFullName()) . app(" = ") . app(decl getExpr()) . app(';')
         }
-
         // We write generated variable declarations first, as they may be required by class static initializers.
         for (stmt in module body) {
             match stmt {
@@ -194,7 +196,6 @@ ModuleWriter: abstract class extends Skeleton {
                     }
             }
         }
-
         // Then, class load calls
         for (type in module types) {
             if(type instanceOf?(ClassDecl)) {
@@ -208,7 +209,6 @@ ModuleWriter: abstract class extends Skeleton {
                 }
             }
         }
-
         // Finally, the rest of the variable declarations and statements
         for (stmt in module body) {
             if (stmt instanceOf?(VariableDecl) && !stmt as VariableDecl getType() instanceOf?(AnonymousStructType)) {
@@ -218,6 +218,35 @@ ModuleWriter: abstract class extends Skeleton {
                 }
             } else {
                 writeLine(stmt)
+            }
+        }
+        current untab(). nl(). app("}")
+        current untab(). nl(). app("}"). nl()
+    }
+
+    writeUnloadFunction: static func (this: Skeleton, module: Module) {
+        current = fw
+        current nl(). app("void "). app(module getUnloadFuncName()). app("();")
+        current = cw
+        current nl(). app("void "). app(module getUnloadFuncName()). app("() {"). tab()
+        current nl(). app("if(#{module getLoadedStateVariableName()}) {"). tab()
+        current nl(). app("#{module getLoadedStateVariableName()} = false;")
+        for (imp in module getAllImports()) {
+            if (imp getModule() simpleName == "Memory") {
+                continue;
+            }
+            current nl(). app(imp getModule() getUnloadFuncName()). app("();")
+        }
+        for (type in module types) {
+            if(type instanceOf?(ClassDecl)) {
+                cDecl := type as ClassDecl
+                finalScore: Int
+                unloadFunc := cDecl getFunction(ClassDecl UNLOAD_FUNC_NAME, null, null, finalScore&)
+                if(unloadFunc) {
+                    if(cDecl getVersion()) VersionWriter writeStart(this, cDecl getVersion())
+                    current nl(). app(unloadFunc getFullName()). app("();")
+                    if(cDecl getVersion()) VersionWriter writeEnd(this, cDecl getVersion())
+                }
             }
         }
         current untab(). nl(). app("}")

@@ -122,6 +122,9 @@ ClassDecl: class extends TypeDecl {
     getLoadedStateVariableName: func -> String {
         "__#{getName()}_loaded__"
     }
+    getInitializedStateVariableName: func -> String {
+        "__#{getName()}_initialized__"
+    }
 
     getDefaultsFunc: func -> FunctionDecl {
         // TODO: a more elegant solution maybe?

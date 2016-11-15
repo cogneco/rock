@@ -187,7 +187,6 @@ ClassDeclWriter: abstract class extends Skeleton {
             current app(' '). openBlock(). nl()
 
             if(decl getName() == ClassDecl LOAD_FUNC_NAME) {
-
                 // Make sure the load function is only evaluated once.
                 current app("if(!#{cDecl getLoadedStateVariableName()})") . openBlock() . nl()
                 current app("#{cDecl getLoadedStateVariableName()} = true;") . nl()
@@ -215,9 +214,9 @@ ClassDeclWriter: abstract class extends Skeleton {
                     FunctionDeclWriter writeFullName(this, superLoad)
                     current app("();")
                 }
-                //
-                // unload stuff here
-                //
+                /*for (vDecl in cDecl variables) {
+                    if (vDecl getExpr() == null) continue
+                }*/
                 current closeBlock()
             }
 
@@ -372,17 +371,16 @@ ClassDeclWriter: abstract class extends Skeleton {
 
         current nl(). nl(). app(underName). app(" *"). app(cDecl getNonMeta() getFullName()). app("_class()"). openBlock(). nl()
 
-        if (cDecl getNonMeta() getSuperRef()) {
-            current app("static _Bool __done__ = false;"). nl()
-        }
         current app("static "). app(underName). app(" class = "). nl()
 
         writeClassStructInitializers(this, realDecl, cDecl, ArrayList<FunctionDecl> new(), true)
 
         current app(';')
+        current nl(). app("static bool __done__ = false;")
+        current nl(). app("if(!__done__)"). openBlock()
+        current nl(). app("__done__ = true;")
         if (cDecl getNonMeta() getSuperRef()) {
             current nl(). app(This CLASS_NAME). app(" *classPtr = ("). app(This CLASS_NAME). app(" *) &class;")
-            current nl(). app("if(!__done__)"). openBlock()
             match (cDecl getNonMeta()) {
                 case cd: CoverDecl =>
                     // covers don't have super classes, silly.
@@ -390,13 +388,11 @@ ClassDeclWriter: abstract class extends Skeleton {
                 case =>
                     current nl(). app("classPtr->super = ("). app(This CLASS_NAME). app("*) "). app(cDecl getNonMeta() getSuperRef() getFullName()). app("_class();")
             }
-            current nl(). app("__done__ = true;").
-                    nl(). app("classPtr->name = ")
+            current nl(). app("classPtr->name = ")
             writeStringLiteral(realDecl getNonMeta() name)
-            current app(";").
-                    closeBlock()
+            current app(";")
         }
-
+        current closeBlock()
         current nl(). app("return &class;"). closeBlock()
     }
 
