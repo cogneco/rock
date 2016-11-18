@@ -1,4 +1,4 @@
-## 1.0.22 (2016-??-??)
+## 1.0.22 (2016-11-28)
 Summary:
   - Class load function are now only evaluated once
   - rock now handles rvalue references when dealing with cover properties
