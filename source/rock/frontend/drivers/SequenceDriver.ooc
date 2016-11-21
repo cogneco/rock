@@ -19,7 +19,6 @@ import rock/backend/cnaughty/CGenerator
 
 SequenceDriver: class extends Driver {
 
-    sourceFolders: HashMap<String, SourceFolder>
     graph: DependencyGraph
 
     pool := JobPool new()

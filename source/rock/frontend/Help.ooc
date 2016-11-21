@@ -176,6 +176,17 @@ ADVANCED OPTIONS
 --debugloop
     Print debug messages about the resolving loop (might help in case of blowup)
 
+--printAst[=filter_1,filter_2,filter_n]
+    Prints useful properties of each AST node.
+    You may filter the output by specifying a comma-separated list of identifiers.
+    The AST printer searches for identifiers in each node's string representation (toString())
+    and node type names.
+        Examples:
+            rock --printAst                     Print the entire AST (filtering disabled)
+            rock --printAst=String,ArrayList    Filter on \"String\" and \"ArrayList\"
+            rock --printAst=FunctionDecl        Print all function declarations
+    Hint: You may wish to redirect the output to a file.
+
 --inline
     Enable generic inlining (EXPERIMENTAL, it will eat your dog)
 
@@ -197,6 +208,15 @@ ADVANCED OPTIONS
 --obfuscate=MAP_FILE
     Translates types specified in the specified map file (EXPERIMENTAL).
     Example: not yet.
+
+--allow-super-when-shadowing
+    Allows you to call super() in a shadowed function. This is prohibited by default.
+
+--no-auto-generated-enum-functions
+    Prevents rock from auto-generating count() and values() functions on enums.
+      count()   returns the number of enum elements.
+      values()  returns an array of all enum elements.
+
 "
         )
     }

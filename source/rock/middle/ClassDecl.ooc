@@ -11,12 +11,13 @@ ClassDecl: class extends TypeDecl {
 
     DESTROY_FUNC_NAME   := static const "__destroy__"
     LOAD_FUNC_NAME      := static const "__load__"
+    UNLOAD_FUNC_NAME    := static const "__unload__"
     DEFAULTS_FUNC_NAME  := static const "__defaults__"
     COVER_DEFAULTS_FUNC_NAME  := static const "__cover_defaults__"
 
     isAbstract := false
     isFinal := false
-    
+
     shouldCheckNoArgConstructor := false
     isInitReported := false
 
@@ -69,10 +70,16 @@ ClassDecl: class extends TypeDecl {
             }
 
             if(isClass || isCover) {
+                addGeneratedStaticFunction := func (name: String) {
+                    fn := FunctionDecl new(name, token)
+                    fn setStatic(true)
+                    addFunction(fn)
+                }
                 if(!functions contains?(This LOAD_FUNC_NAME)) {
-                    fDecl := FunctionDecl new(This LOAD_FUNC_NAME, token)
-                    fDecl setStatic(true)
-                    addFunction(fDecl)
+                    addGeneratedStaticFunction(This LOAD_FUNC_NAME)
+                }
+                if (!functions contains?(This UNLOAD_FUNC_NAME)) {
+                    addGeneratedStaticFunction(This UNLOAD_FUNC_NAME)
                 }
 
                 for (f in functions) {
@@ -112,6 +119,13 @@ ClassDecl: class extends TypeDecl {
         return fDecl
     }
 
+    getLoadedStateVariableName: func -> String {
+        "__#{getName()}_loaded__"
+    }
+    getInitializedStateVariableName: func -> String {
+        "__#{getName()}_initialized__"
+    }
+
     getDefaultsFunc: func -> FunctionDecl {
         // TODO: a more elegant solution maybe?
         meat : ClassDecl = isMeta ? this : getMeta()
@@ -123,7 +137,7 @@ ClassDecl: class extends TypeDecl {
         return fDecl
     }
 
-    
+
     getBaseClass: func ~afterResolve(fDecl: FunctionDecl) -> ClassDecl {
         b: Bool
         getBaseClass(fDecl, false, b&)
@@ -136,10 +150,10 @@ ClassDecl: class extends TypeDecl {
     getBaseClass: func (fDecl: FunctionDecl, withInterfaces: Bool, comeBack: Bool*) -> ClassDecl {
         sRef := getSuperRef() as ClassDecl
         // An interface might not yet be resolved.
-        comeBack@ = false 
+        comeBack@ = false
         // first look in the supertype, if any
         if(sRef != null) {
-             
+
             base := sRef getBaseClass(fDecl, comeBack)
             if (comeBack@) { // ugly_
                 return null

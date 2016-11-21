@@ -1,6 +1,7 @@
 import io/File, text/EscapeSequence
 import structs/[HashMap, ArrayList, List, MultiMap]
 import ../frontend/[Token, BuildParams, PathList, AstBuilder]
+import ../frontend/drivers/[Driver, SourceFolder]
 import ../utils/FileUtils
 import Node, FunctionDecl, Visitor, Import, Include, Use, UseDef, TypeDecl,
        FunctionCall, Type, Declaration, VariableAccess, OperatorDecl,
@@ -8,7 +9,8 @@ import Node, FunctionDecl, Visitor, Import, Include, Use, UseDef, TypeDecl,
 import tinker/[Response, Resolver, Trail, Errors]
 
 Module: class extends Node {
-
+    RUNTIME_UNLOAD_NAME := static const "__runtime_unload__"
+    RUNTIME_RELOAD_NAME := static const "__runtime_reload__"
     // statistics house-keeping
     timesImported := 0
     timesLooped := 0
@@ -72,12 +74,27 @@ Module: class extends Node {
         dead = false
     }
 
+    // NOTE: This does not recompute the paths!
+    resetNames: func (newName: String) {
+        //newFullName: String
+        idx := fullName lastIndexOf('/')
+        simpleName = newName clone()
+        if (idx > -1) {
+            fullName = fullName substring(0, idx + 1) append(newName)
+        } else {
+            fullName = newName clone()
+        }
+        underName = sanitize(fullName)
+    }
+
     clone: func -> This {
         raise(This, "Can't clone Module")
         null
     }
 
+    getLoadedStateVariableName: func -> String { "__#{getUnderName()}_loaded__" }
     getLoadFuncName: func -> String { getUnderName() + "_load" }
+    getUnloadFuncName: func -> String { "#{getUnderName()}_unload" }
     getFullName:     func -> String { fullName }
     getUnderName:    func -> String { underName }
     getPathElement:  func -> String { pathElement }
@@ -95,11 +112,10 @@ Module: class extends Node {
     }
 
     getPath: func (suffix := "") -> String {
-        // TODO: This is highly ineffecient
-        if (isObfuscated)
-            path = path contains?(File separator) ? path substring(0, path lastIndexOf(File separator) + 1) + simpleName : simpleName
+        // TODO: This is hack to fix an issue with source paths when using the obfuscator
+        modPath := isObfuscated ? (path contains?(File separator) ? path substring(0, path lastIndexOf(File separator) + 1) + simpleName : simpleName) : path
         base := getSourceFolderName()
-        File new(base, path) path + suffix
+        File new(base, modPath) path + suffix
     }
 
     getLocalPath: func (suffix := "") -> String {
