@@ -1274,6 +1274,29 @@ TypeDecl: abstract class extends Declaration {
                     varAcc := VariableAccess new("this", access token)
                     varAcc reverseExpr = access
                     access expr = varAcc
+                    if (res params explicitThis) {
+                        mustBeExplicit := true
+
+                        // Generic variables do not require explicit this
+                        if (vDecl getType()) {
+                            if (vDecl getType() toString() == "Class") {
+                                mustBeExplicit = false
+                            }
+                        }
+
+                        // Access to a variable from within its own declaration does not have to be explicit
+                        depth := trail getSize() - 1
+                        while (depth >= 0) {
+                            if (trail get(depth) == vDecl) {
+                                mustBeExplicit = false
+                            }
+                            depth -= 1
+                        }
+
+                        if (mustBeExplicit) {
+                            access token printMessage("Implicit this detected for variable access of " + vDecl name + "!")
+                        }
+                    }
                 }
                 return 0
             }
@@ -1381,8 +1404,14 @@ TypeDecl: abstract class extends Declaration {
         if (fDecl) {
             if (call debugCondition()) "    \\o/ Found fDecl for %s, it's %s" format(call name, fDecl toString()) println()
             if (call suggest(fDecl, res, trail)) {
-                if (fDecl hasThis() && !call getExpr()) {
-                    call setExpr(VariableAccess new("this", call token))
+                if (!call getExpr()) {
+                    if (fDecl hasThis()) {
+                        call setExpr(VariableAccess new("this", call token))
+                    }
+                    if (res params explicitThis && fDecl name != "init" && fDecl name != ClassDecl DEFAULTS_FUNC_NAME) {
+                        name := fDecl hasThis() ? "this" : "This"
+                        call token printMessage("Implicit " + name + " detected for call to " + fDecl name + "!")
+                    }
                 }
                 return 0
             }
@@ -1412,6 +1441,9 @@ TypeDecl: abstract class extends Declaration {
                             // if the variable is static, use class scope not instance
                             name := vDecl isStatic() ? "This" : "this"
                             call setExpr(VariableAccess new(name, call token))
+                            if (res params explicitThis) {
+                                call token printMessage("Implicit " + name + " detected for call to " + vDecl name + "!")
+                            }
                         }
                     }
                 }

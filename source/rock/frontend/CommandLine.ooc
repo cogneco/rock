@@ -337,6 +337,10 @@ CommandLine: class {
                     params verboser = true
                     params veryVerbose = true
 
+                } else if (option == "explicitThis") {
+
+                    params explicitThis = true
+
                 } else if (option == "stats") {
 
                     if(!longOption) warnUseLong("stats")

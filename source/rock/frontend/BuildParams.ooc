@@ -197,6 +197,9 @@ BuildParams: class {
     // More debug messages
     veryVerbose := false
 
+    // Give a warning when `this` is added implicitly
+    explicitThis := false
+
     // Debugging purposes
     debugLoop := false
     debugLibcache := false
