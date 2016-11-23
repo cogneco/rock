@@ -9,6 +9,7 @@ import tinker/[Response, Resolver, Trail, Errors]
 
 ClassDecl: class extends TypeDecl {
 
+    FREE_FUNC_NAME      := static const "free"
     DESTROY_FUNC_NAME   := static const "__destroy__"
     LOAD_FUNC_NAME      := static const "__load__"
     UNLOAD_FUNC_NAME    := static const "__unload__"
@@ -82,12 +83,55 @@ ClassDecl: class extends TypeDecl {
                     addGeneratedStaticFunction(This UNLOAD_FUNC_NAME)
                 }
 
+
                 for (f in functions) {
                     if (f name == "" || f name == null) {
                         msg :=  "Anonymous function can not be defined in class or cover."
                         err := AnonymousFunctionDecl new(f token, msg)
                         res throwError(err)
                     }
+                }
+            }
+
+            if (isClass || (isCover && !isCompoundCover)) {
+                // Add 'free' function
+                if (!lookupFunction(This FREE_FUNC_NAME, "")) {
+                    fDecl := FunctionDecl new(This FREE_FUNC_NAME, token)
+                    fDecl setOverride(true)
+
+                    if (isCover) {
+                        fDecl isThisRef = true
+                    }
+
+                    // So, we need to call the user defined destroy function, memfree all generic members that belong to us (not our superclasses) then add a super() call
+                    if (lookupFunction(This DESTROY_FUNC_NAME, "")) {
+                        fCall := FunctionCall new(This DESTROY_FUNC_NAME, token)
+                        fCall virtual = false
+
+                        fDecl body add(fCall)
+                    }
+
+                    mustReturn? := false
+                    meat variables each(|vName, vDecl|
+                        if (!vDecl getType()) {
+                            // Need type!
+                            res wholeAgain(this, "Need type of member variable '#{vName}'")
+                            mustReturn? = true
+                        } else if (vDecl getType() isGeneric()) {
+                            // Free the generic!
+                            fCall := FunctionCall new("memfree", token)
+                            genAcc := VariableAccess new(vName, token)
+                            fCall args add(genAcc)
+                            fDecl body add(fCall)
+                        }
+                    )
+
+                    if (mustReturn?) {
+                        return Response OK
+                    }
+
+                    fDecl body add(FunctionCall new("super", token))
+                    addFunction(fDecl)
                 }
             }
         }

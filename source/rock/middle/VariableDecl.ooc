@@ -25,7 +25,6 @@ VariableDecl: class extends Declaration {
     isProto := false
     externName: String = null
     unmangledName: String = null
-    isForcedMalloc := false
 
     /** if this VariableDecl is a Func, it can be called! */
     fDecl : FunctionDecl = null
@@ -60,7 +59,6 @@ VariableDecl: class extends Declaration {
         copy externName    = externName
         copy unmangledName = unmangledName
         copy fDecl         = fDecl
-        copy isForcedMalloc = isForcedMalloc
         copy
     }
 
@@ -105,9 +103,6 @@ VariableDecl: class extends Declaration {
 
     isGlobal: func -> Bool { isGlobal }
     setGlobal: func (=isGlobal) {}
-
-    isForcedMalloc: func -> Bool { isForcedMalloc}
-    setForcedMalloc: func (=isForcedMalloc) {}
 
     isArg: func -> Bool { isArg }
 
@@ -387,14 +382,8 @@ VariableDecl: class extends Declaration {
         typeAcc := VariableAccess new(type, token)
         sizeAcc := VariableAccess new(typeAcc, "size", token)
 
-        fCall: FunctionCall
-            if(isForcedMalloc) {
-              fCall = FunctionCall new("calloc", token)
-              fCall args add(IntLiteral new(1, (0, 0, null, 0) as Token))
-            }
-            else {
-              fCall = FunctionCall new("alloca", token)
-            }
+        fCall := FunctionCall new("calloc", token)
+        fCall args add(IntLiteral new(1, (0, 0, null, 0) as Token))
         fCall args add(sizeAcc)
 
         expr = fCall
