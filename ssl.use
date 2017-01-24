@@ -1,0 +1,7 @@
+Name: OpenSSL
+Description: Wrapper for OpenSSL and libcrypto
+SourcePath: sdk/ssl/
+Imports: ssl
+Requires: sdk
+Libs: -lcrypto
+Libs: -lssl
